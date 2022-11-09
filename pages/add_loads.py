@@ -1,12 +1,12 @@
 import sqlite3
 import sys
-from datetime import date
+from datetime import datetime
 from PyQt5.QtWidgets import (
-    QPushButton, QLabel, QLineEdit, QMessageBox  # QDateEdit
+    QPushButton, QLabel, QMessageBox, QDateEdit
 )
+from PyQt5.QtCore import QDate
 from src.helper import (
-    clean_layout, date_insert, registrate_inputs, resource_path,
-    create_month_data
+    clean_layout, resource_path, create_month_data, field_insert
 )
 from src.validators import month_year_validate, date_validate, int_validate
 from src.global_enums.literals import (
@@ -17,28 +17,20 @@ from configure import DB_NAME
 
 def add_loads(layout):
     ''' вносим данные по загрузкам '''
+    today = (datetime.now().year, datetime.now().month, datetime.now().day)
     clean_layout(layout)
     lbl_loads = QLabel(LabelTexts.LOADS.value)
     layout.addRow(lbl_loads)
-    today = str(date.today())
-    curr_date = today[8:10]
-    ent_date = QLineEdit()
-    ent_date.setMaxLength(2)
-    ent_date.setText(curr_date)
-    layout.addRow(QLabel(LabelTexts.DATE.value), ent_date)
-    ent_month, ent_year = date_insert(layout, 'add_loads')
-    ent_photo = QLineEdit()
-    ent_photo.setMaxLength(3)
-    ent_photo.setText('0')
-    layout.addRow(QLabel(LabelTexts.PHOTO.value), ent_photo)
-    ent_video = QLineEdit()
-    ent_video.setMaxLength(3)
-    ent_video.setText('0')
-    layout.addRow(QLabel(LabelTexts.VIDEO.value), ent_video)
+    ent_date = QDateEdit(QDate(*today))
+    ent_date.setCalendarPopup(True)
+    ent_date.setDate(QDate())
+    layout.addRow('выберите дату', ent_date)
+    ent_photo = field_insert(layout, 7, '0', LabelTexts.PHOTO.value)
+    ent_video = field_insert(layout, 7, '0', LabelTexts.VIDEO.value)
     btn_add = QPushButton(ButtonTexts.SAVE.value)
     btn_add.clicked.connect(lambda: save_loads(
-        ent_date.text(), ent_month.text(), ent_year.text(), ent_photo.text(),
-        ent_video.text()
+        ent_date.date().getDate()[2], ent_date.date().getDate()[1],
+        ent_date.date().getDate()[0], ent_photo.text(), ent_video.text()
     ))
     layout.addRow(btn_add)
 
@@ -65,18 +57,17 @@ def save_loads(day, month, year, photo, video):
                 if not days:
                     return
                 day_line = (day, month, year, 0, 0)
-            cursor.execute('''UPDATE loads SET
-                            photo_load = :photo,
-                            video_load = :video
-                            WHERE day = :day AND
-                                  month = :month AND
-                                  year = :year''', {
-                                'photo': int(photo) + int(day_line[3]),
-                                'video': int(video) + int(day_line[4]),
-                                'day': day,
-                                'month': month,
-                                'year': year
-                            })
+            cursor.execute('''UPDATE loads SET photo_load = :photo,
+                video_load = :video WHERE day = :day AND month = :month
+                AND year = :year''', {'photo': int(photo) + int(day_line[3]),
+                                      'video': int(video) + int(day_line[4]),
+                                      'day': day,
+                                      'month': month,
+                                      'year': year})
+            new_values = [(month, 'month'), (year, 'year')]
+            cursor.executemany(
+                'UPDATE dates SET value=? WHERE period=?', new_values
+            )
             conn.commit()
     except Exception as e:
         error = QMessageBox()

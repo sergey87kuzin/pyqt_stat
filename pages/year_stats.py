@@ -1,40 +1,23 @@
 import sqlite3
-from datetime import date
-from PyQt5.QtWidgets import (
-    QPushButton, QLabel, QLineEdit, QMessageBox,
-    QGridLayout, QFormLayout, QDialog  # QDateEdit
-)
-from src.helper import (
-    clean_layout, resource_path, create_month_data
-)
-from src.validators import month_year_validate
-from src.global_enums.literals import (
-    Titles, InfoTexts, LabelTexts, ButtonTexts
-)
-from src.global_enums.colours import ElementColour
+
 from configure import DB_NAME
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QDialog, QFormLayout, QFrame, QGridLayout, QLabel,
+                             QMessageBox)
+from src.global_enums.literals import Choices, InfoTexts, Titles
+from src.helper import (add_year_buttons, clean_layout, create_month_data,
+                        get_month, resource_path)
 
 
-def year_stats(layout):
+def year_stats(layout, photo, video):
     ''' позволяет указать, статистику загрузок какого года показать '''
-    clean_layout(layout)
-    layout.addRow(QLabel(LabelTexts.YEAR_STATS.value))
-    today = str(date.today())
-    curr_year = today[2:4]
-    ent_year = QLineEdit()
-    ent_year.setMaxLength(3)
-    ent_year.setText(curr_year)
-    layout.addRow(QLabel(LabelTexts.YEAR.value), ent_year)
-    btn_show = QPushButton(ButtonTexts.SHOW_STATS.value)
-    btn_show.clicked.connect(lambda: show_year_loads(
-        layout, ent_year.text()
-    ))
-    layout.addRow(btn_show)
+    month, year = get_month()
+    show_year_loads(layout, year, None, photo, video)
 
 
-def show_year_loads(layout, year):
-    if month_year_validate(1, year):
-        return
+def show_year_loads(layout, year, window, photo_col, video_col):
+    if window:
+        window.accept()
     clean_layout(layout)
     try:
         with sqlite3.connect(resource_path(DB_NAME)) as conn:
@@ -43,6 +26,10 @@ def show_year_loads(layout, year):
                 ''' SELECT day, month, year, photo_load, video_load
                     FROM loads WHERE year=:year ''',
                 {'year': year}).fetchall()
+            cursor.execute(
+                'UPDATE dates SET value=:value WHERE period=:period',
+                {'value': year, 'period': 'year'}
+            )
     except Exception:
         error = QMessageBox()
         error.setWindowTitle(Titles.WARN_TITLE.value)
@@ -58,7 +45,11 @@ def show_year_loads(layout, year):
         else:
             month_results[int(line[1])] = [line, ]
     window = QDialog(layout.parentWidget())
+    window.setStyleSheet('QLabel {font: bold 10px;}')
     stat_layout = QGridLayout()
+    stat_layout.setVerticalSpacing(0)
+    stat_layout.setHorizontalSpacing(10)
+    stat_layout.addWidget(QLabel(str(year)), 0, 0)
     for i in range(1, 13):
         if i not in month_results:
             month_data = create_month_data(i, year)
@@ -67,18 +58,52 @@ def show_year_loads(layout, year):
         else:
             month_data = month_results[i]
         month_layout = QGridLayout()
-        month_layout.addWidget(QLabel(str(i)), 0, 0, 1, 4)
+        month_layout.setVerticalSpacing(0)
+        month_layout.setHorizontalSpacing(0)
+        month_layout.addWidget(
+            QLabel(Choices.MONTHS.value[i - 1]), 0, 0, 1, 4
+        )
         for ind, day_data in enumerate(month_data):
-            day_layout = QFormLayout()
+            frame = QFrame()
+            frame.setStyleSheet('border: dotted; border-width: 1px;')
+            day_layout = QFormLayout(frame)
+            day_layout.setVerticalSpacing(0)
+            day_layout.setContentsMargins(0, 0, 0, 0)
             if day_data[0] != 0:
-                day_layout.addRow(QLabel(str(day_data[0])))
-                photo, video = '-', '-'
-                if line[3] != 0:
-                    photo = '+'
-                if line[4] != 0:
-                    video = '+'
-                day_layout.addRow(QLabel(f'{photo}  {video}'))
-            month_layout.addLayout(day_layout, ind // 7 + 1, ind % 7)
-        stat_layout.addLayout(month_layout, (i - 1) // 4, (i - 1) % 4)
+                date = QLabel(str(day_data[0]))
+                date.setAlignment(Qt.AlignCenter)
+                day_layout.addRow(date)
+                photo, video = QLabel('-'), QLabel('-')
+                for label in (date, photo, video):
+                    label.setStyleSheet('border: none;')
+                if day_data[3] != 0:
+                    photo.setText('●')
+                    photo.setStyleSheet(f'color: {photo_col}; border: none;')
+                if day_data[4] != 0:
+                    video.setText('●')
+                    video.setStyleSheet(f'color: {video_col}; border: none;')
+                for label in (photo, video):
+                    label.setMaximumWidth(15)
+                    label.setMinimumWidth(15)
+                day_layout.addRow(photo, video)
+                day_layout.setFormAlignment(
+                    Qt.AlignHCenter | Qt.AlignTop
+                )
+            month_layout.addWidget(frame, ind // 7 + 1, ind % 7)
+        stat_layout.addLayout(
+            month_layout, (i - 1) // 4 + 1, (i - 1) % 4, 1, 1, Qt.AlignTop
+        )
+    photo = QLabel()
+    photo.setText(f'<font color={photo_col}>● </font>'
+                  + '<font color="black">- отметка фото</font>')
+    video = QLabel()
+    video.setText(f'<font color={video_col}>● </font>'
+                  + '<font color="black">- отметка видео</font>')
+    button_layout = add_year_buttons(
+        layout, show_year_loads, year, window, photo_col, video_col
+    )
+    stat_layout.addWidget(photo, 5, 1)
+    stat_layout.addWidget(video, 5, 2)
+    stat_layout.addLayout(button_layout, 6, 1, 1, 2)
     window.setLayout(stat_layout)
-    window.exec()
+    window.show()

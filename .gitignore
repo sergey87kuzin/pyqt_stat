@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# service files to fill db tables
+db_dates_insert.py
+db_insert_stylesheet.py

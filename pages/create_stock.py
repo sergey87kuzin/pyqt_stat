@@ -3,7 +3,7 @@ import sys
 from PyQt5.QtWidgets import (
     QPushButton, QLabel, QLineEdit, QMessageBox  # QDateEdit
 )
-from src.helper import clean_layout, resource_path
+from src.helper import clean_layout, resource_path, field_insert
 from src.global_enums.literals import (
     Titles, InfoTexts, LabelTexts, ButtonTexts,
     # ButtonNames, LabelNames
@@ -16,9 +16,7 @@ def create_stock(layout):
     clean_layout(layout)
     QLabel(LabelTexts.CREATE_STOCK.value)
     layout.addRow(QLabel(LabelTexts.CREATE_STOCK.value))
-    ent_stock_name = QLineEdit()
-    ent_stock_name.setMaxLength(25)
-    layout.addRow(QLabel(LabelTexts.STOCK.value), ent_stock_name)
+    ent_stock_name = field_insert(layout, 25, '', LabelTexts.STOCK.value)
     btn_add = QPushButton(ButtonTexts.CREATE.value)
     btn_add.clicked.connect(lambda: save_stock(
         ent_stock_name.text()
@@ -50,9 +48,7 @@ def save_stock(stock_name):
                 error.exec_()
                 return
             cursor.execute('INSERT INTO stocks VALUES (:stock)',
-                           {
-                                'stock': stock_name
-                            })
+                           {'stock': stock_name})
             conn.commit()
     except Exception:
         error = QMessageBox()

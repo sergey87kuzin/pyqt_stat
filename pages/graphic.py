@@ -1,114 +1,114 @@
+import calendar
 import sqlite3
-import matplotlib
-import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import (
-    QPushButton, QLabel, QMessageBox, QComboBox
-)
-from src.helper import clean_layout, resource_path, date_insert
-from src.global_enums.literals import (
-    Choices, Titles, InfoTexts, LabelTexts, ButtonTexts
-)
+
 from configure import DB_NAME
-matplotlib.use('TkAgg')
+from PyQt5.QtCore import QRect
+from PyQt5.QtWidgets import QMessageBox
+from pyqtgraph import BarGraphItem, GraphicsLayoutWidget
+from src.global_enums.literals import InfoTexts, Titles
+from src.helper import (add_prev_next_buttons, add_year_buttons, clean_layout,
+                        get_month, resource_path)
 
 
-def graphic(layout):
-    ''' задать параметры графика '''
+def year_chart(layout):
+    month, year = get_month()
+    year_graph(layout, year)
+
+
+def year_graph(layout, year):
+    layout.parentWidget().setGeometry(QRect(0, 0, 400, 600))
     clean_layout(layout)
-    layout.addRow(QLabel(LabelTexts.GRAPHIC_TOP.value))
-    ent_month, ent_year = date_insert(layout, 'graphic')
-    lst_type = QComboBox(Choices.GRAPHICS.value)
-    layout.addRow(QLabel(LabelTexts.GRAPHIC_TYPE.value), lst_type)
-    btn_plot = QPushButton(ButtonTexts.PLOT.value)
-    btn_plot.clicked.connect(lambda: create_graphic(
-        ent_month.text(), ent_year.text(), lst_type.currentText()
-    ))
-    layout.addRow(btn_plot)
-
-
-def create_graphic(month, year, graphic_type):
-    ''' Построение графиков '''
     try:
         with sqlite3.connect(resource_path(DB_NAME)) as conn:
             cursor = conn.cursor()
-            if graphic_type == Choices.GRAPHICS.value[0]:
-                data = cursor.execute(
-                    ''' SELECT month, sum(photo_sold), sum(video_sold),
-                    sum(amount_sold) FROM sales WHERE year=:year
-                    GROUP BY month ''',
-                    {'year': year}
-                ).fetchall()
-                if not data:
-                    error = QMessageBox()
-                    error.setWindowTitle(Titles.WARN_TITLE.value)
-                    error.setText(InfoTexts.NO_YEAR_DATA.value)
-                    error.setIcon(QMessageBox.Warning)
-                    error.setStandardButtons(QMessageBox.Ok)
-                    error.exec_()
-                    return
-                print_graphic(data)
-            elif graphic_type == Choices.GRAPHICS.value[1]:
-                data = cursor.execute(
-                    ''' SELECT stock, sum(photo_sold), sum(video_sold),
-                    sum(amount_sold) FROM sales WHERE month=:month
-                    AND year=:year GROUP BY stock ''',
-                    {'month': month, 'year': year}
-                ).fetchall()
-                if not data:
-                    error = QMessageBox()
-                    error.setWindowTitle(Titles.WARN_TITLE.value)
-                    error.setText(InfoTexts.NO_MONTH_DATA.value)
-                    error.setIcon(QMessageBox.Warning)
-                    error.setStandardButtons(QMessageBox.Ok)
-                    error.exec_()
-                    return
-                print_graphic(data)
-            else:
+            data = cursor.execute(
+                ''' SELECT month, sum(photo_sold), sum(video_sold),
+                sum(amount_sold) FROM sales WHERE year=:year
+                GROUP BY month ''',
+                {'year': year}
+            ).fetchall()
+            if not data:
                 error = QMessageBox()
                 error.setWindowTitle(Titles.WARN_TITLE.value)
-                error.setText(InfoTexts.CHOOSE_GRAPH.value)
+                error.setText(InfoTexts.NO_YEAR_DATA.value)
                 error.setIcon(QMessageBox.Warning)
                 error.setStandardButtons(QMessageBox.Ok)
                 error.exec_()
                 return
-    except Exception:
+    except Exception as e:
         error = QMessageBox()
         error.setWindowTitle(Titles.WARN_TITLE.value)
-        error.setText(InfoTexts.ERROR_TEXT.value)
+        # error.setText(InfoTexts.ERROR_TEXT.value)
+        error.setText(str(e))
         error.setIcon(QMessageBox.Warning)
         error.setStandardButtons(QMessageBox.Ok)
         error.exec_()
         return
+    graphics = (('photo', 1), ('video', 2), ('income', 3))
+    for graphic in graphics:
+        graph_widget = single_chart(data, *graphic)
+        layout.addRow('', graph_widget)
+    button_layout = add_year_buttons(layout, year_graph, year)
+    layout.addRow(button_layout)
 
 
-def print_graphic(data):
-    ''' формирует столбчатые диаграмы на основе данных из БД '''
-    label_list = [line[0] for line in data]
-    photo_list = [line[1] for line in data]
-    video_list = [line[2] for line in data]
-    income_list = [line[3] for line in data]
-    plt.figure(Titles.GRAPHIC_TITLE.value)
-    plt.subplots_adjust(wspace=0.3, hspace=0.5)
-    plt.subplot(311)
-    plt.bar(label_list, photo_list)
-    annotate_bars(label_list, photo_list)
-    plt.ylabel(LabelTexts.PHOTO.value)
-    plt.subplot(312)
-    plt.bar(label_list, video_list)
-    annotate_bars(label_list, video_list)
-    plt.ylabel(LabelTexts.VIDEO.value)
-    plt.subplot(313)
-    plt.bar(label_list, income_list)
-    annotate_bars(label_list, income_list)
-    plt.ylabel(LabelTexts.INCOME.value)
-    plt.show()
+def stock_chart(layout):
+    month, year = get_month()
+    stock_graph(layout, month, year)
 
 
-def annotate_bars(label_list, data_list):
-    ''' подписывает столбцы диаграм '''
-    plt.xticks(ticks=label_list, labels=label_list, rotation=45)
-    for i in range(len(data_list)):
-        plt.annotate(
-            str(data_list[i]), xy=(label_list[i], data_list[i]),
-            ha='center', va='bottom'
-        )
+def stock_graph(layout, month, year):
+    layout.parentWidget().setGeometry(QRect(0, 0, 400, 600))
+    clean_layout(layout)
+    try:
+        with sqlite3.connect(resource_path(DB_NAME)) as conn:
+            cursor = conn.cursor()
+            data = cursor.execute(
+                ''' SELECT stock, sum(photo_sold), sum(video_sold),
+                sum(amount_sold) FROM sales WHERE month=:month
+                AND year=:year GROUP BY stock ''',
+                {'month': month, 'year': year}
+            ).fetchall()
+            if not data:
+                error = QMessageBox()
+                error.setWindowTitle(Titles.WARN_TITLE.value)
+                error.setText(InfoTexts.NO_MONTH_DATA.value)
+                error.setIcon(QMessageBox.Warning)
+                error.setStandardButtons(QMessageBox.Ok)
+                error.exec_()
+                return
+    except Exception as e:
+        error = QMessageBox()
+        error.setWindowTitle(Titles.WARN_TITLE.value)
+        # error.setText(InfoTexts.ERROR_TEXT.value)
+        error.setText(str(e))
+        error.setIcon(QMessageBox.Warning)
+        error.setStandardButtons(QMessageBox.Ok)
+        error.exec_()
+        return
+    graphics = (('photo', 1), ('video', 2), ('income', 3))
+    for graphic in graphics:
+        graph_widget = single_chart(data, *graphic)
+        layout.addRow('', graph_widget)
+    add_prev_next_buttons(layout, stock_graph, month, year)
+
+
+def single_chart(data, title, index):
+    graph_widget = GraphicsLayoutWidget()
+    graph_1 = graph_widget.addPlot(title=title)
+    try:
+        x_labels = [list(calendar.month_abbr)[line[0]] for line in data]
+    except Exception:
+        x_labels = [line[0] for line in data]
+    height = [line[index] for line in data]
+    x_vals = list(range(1, len(x_labels) + 1))
+    ticks = []
+    for i, item in enumerate(x_labels):
+        ticks.append((x_vals[i], item))
+    ticks = [ticks]
+
+    bargraph = BarGraphItem(x=x_vals, height=height, width=0.5)
+    graph_1.addItem(bargraph)
+    ax = graph_1.getAxis('bottom')
+    ax.setTicks(ticks)
+    return graph_widget

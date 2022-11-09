@@ -1,16 +1,16 @@
-import os
-import sys
-import sqlite3
-from datetime import date
 import calendar
-from PyQt5.QtWidgets import (
-    QLabel, QLineEdit, QMessageBox  # QDateEdit
-)
-from src.global_enums.literals import (
-    Titles, InfoTexts, LabelTexts
-)
-from .validators import month_year_validate
+import os
+import sqlite3
+import sys
+from datetime import datetime
+
 from configure import DB_NAME
+from PyQt5.QtWidgets import (QGridLayout, QLabel, QLineEdit, QMessageBox,
+                             QPushButton)
+
+from src.global_enums.literals import InfoTexts, Titles, ButtonTexts
+
+from .validators import month_year_validate
 
 
 def start_sql():
@@ -19,11 +19,15 @@ def start_sql():
         cursor = conn.cursor()
         cursor.execute('CREATE TABLE IF NOT EXISTS stocks(stock text)')
         cursor.execute('''CREATE TABLE IF NOT EXISTS loads(
-            day integer, month integer, year integer, photo_load,
-            video_load)''')
+            day integer, month integer, year integer, photo_load integer,
+            video_load integer)''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS sales(
-            month integer, year integer,
-            photo_sold, video_sold, amount_sold, stock text)''')
+            month integer, year integer, photo_sold integer,
+            video_sold integer, amount_sold float, stock text)''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS stylesheets(
+            widget text, style text)''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS dates(
+            period text, value integer)''')
         conn.commit()
         conn.close()
     except Exception as e:
@@ -44,34 +48,23 @@ def clean_layout(layout):
             widget.setParent(None)
         else:
             clean_layout(item.layout())
-    # for i in reversed(range(layout.count())):
-    #     item = layout.itemAt(i)
-    #     if item:
-    #         layout.removeWidget(item.widget())
 
 
-def date_insert(layout, name):
-    ''' добавление полей даты '''
-    today = str(date.today())
-    curr_year = today[2:4]
-    curr_month = today[5:7]
-    ent_month = QLineEdit()
-    ent_month.setMaxLength(2)
-    ent_month.setText(curr_month)
-    layout.addRow(QLabel(LabelTexts.MONTH.value), ent_month)
-    ent_year = QLineEdit()
-    ent_year.setMaxLength(2)
-    ent_year.setText(curr_year)
-    layout.addRow(QLabel(LabelTexts.YEAR.value), ent_year)
-    return ent_month, ent_year
+def field_insert(layout, max_length, fill, name):
+    ''' добавление полей '''
+    ent_field = QLineEdit()
+    ent_field.setMaxLength(max_length)
+    ent_field.setText(fill)
+    layout.addRow(QLabel(name), ent_field)
+    return ent_field
 
 
 def registrate_inputs(texts, entries, off, layout):
     ''' расположение полей на рамке '''
     for ind, text in enumerate(texts):
-        layout.addWidget(text, ind+off, 0)
+        layout.addWidget(text, ind + off, 0)
     for ind, entry in enumerate(entries):
-        layout.addWidget(entry, ind+off, 0)
+        layout.addWidget(entry, ind + off, 0)
 
 
 def resource_path(relative_path):
@@ -95,14 +88,14 @@ def create_sales_month_data(month, year, stock):
         with sqlite3.connect(resource_path(DB_NAME)) as conn:
             cursor = conn.cursor()
             cursor.execute(''' INSERT INTO sales (month, year,
-                           photo_sold, video_sold, amount_sold, stock)
-                           VALUES (:month, :year, :photo_sold, :video_sold,
-                           :amount_sold, :stock) ''',
-                           {
-                                'month': month, 'year': year, 'photo_sold': 0,
-                                'video_sold': 0, 'amount_sold': 0,
-                                'stock': stock
-                            })
+                photo_sold, video_sold, amount_sold, stock)
+                VALUES (:month, :year, :photo_sold, :video_sold,
+                :amount_sold, :stock) ''', {'month': month,
+                                            'year': year,
+                                            'photo_sold': 0,
+                                            'video_sold': 0,
+                                            'amount_sold': 0,
+                                            'stock': stock})
             conn.commit()
     except Exception:
         error = QMessageBox()
@@ -136,3 +129,68 @@ def create_month_data(month, year):
         error.exec_()
         return
     return days
+
+
+def next_month(month, year):
+    year += month // 12
+    month = month % 12 + 1
+    return month, year
+
+
+def prev_month(month, year):
+    if month == 1:
+        return 12, year - 1
+    return month - 1, year
+
+
+def get_month():
+    try:
+        with sqlite3.connect(resource_path(DB_NAME)) as conn:
+            cursor = conn.cursor()
+            date = cursor.execute(
+                'SELECT period, value FROM dates'
+            ).fetchall()
+            for line in date:
+                if line[0] == 'month':
+                    month = line[1]
+                else:
+                    year = line[1]
+    except Exception:
+        error = QMessageBox()
+        error.setWindowTitle(Titles.WARN_TITLE.value)
+        error.setText(InfoTexts.ERROR_TEXT.value)
+        error.setIcon(QMessageBox.Warning)
+        error.setStandardButtons(QMessageBox.Ok)
+        error.exec_()
+        return datetime.now().month, datetime.now().year
+    return month, year
+
+
+def add_prev_next_buttons(layout, function, month, year, *args):
+    button_layout = QGridLayout()
+    btn_prev = QPushButton(ButtonTexts.PREV.value)
+    btn_prev.clicked.connect(
+        lambda: function(layout, *prev_month(month, year), *args)
+    )
+    btn_next = QPushButton(ButtonTexts.NEXT.value)
+    btn_next.clicked.connect(
+        lambda: function(layout, *next_month(month, year), *args)
+    )
+    button_layout.addWidget(btn_prev, 0, 0)
+    button_layout.addWidget(btn_next, 0, 1)
+    layout.addRow(button_layout)
+
+
+def add_year_buttons(layout, function, year, *args):
+    button_layout = QGridLayout()
+    btn_prev = QPushButton(ButtonTexts.PREV_YEAR.value)
+    btn_prev.clicked.connect(
+        lambda: function(layout, year - 1, *args)
+    )
+    btn_next = QPushButton(ButtonTexts.NEXT_YEAR.value)
+    btn_next.clicked.connect(
+        lambda: function(layout, year + 1, *args)
+    )
+    button_layout.addWidget(btn_prev, 0, 0)
+    button_layout.addWidget(btn_next, 0, 1)
+    return button_layout

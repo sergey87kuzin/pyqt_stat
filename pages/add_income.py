@@ -1,11 +1,10 @@
 import sqlite3
 import sys
 from PyQt5.QtWidgets import (
-    QPushButton, QLabel, QLineEdit, QMessageBox, QComboBox  # QDateEdit
+    QPushButton, QLabel, QMessageBox, QComboBox, QCalendarWidget
 )
 from src.helper import (
-    resource_path, clean_layout, date_insert,
-    create_sales_month_data
+    resource_path, clean_layout, create_sales_month_data, field_insert
 )
 from src.validators import month_year_validate, int_validate, float_validate
 from src.global_enums.literals import (
@@ -41,26 +40,18 @@ def add_income(layout):
     stocks = [stock[0] for stock in stocks]
     QLabel(LabelTexts.SALES.value)
     layout.addRow(QLabel(LabelTexts.SALES.value))
-    ent_month, ent_year = date_insert(layout, 'add_income')
-    ent_photo = QLineEdit()
-    ent_photo.setMaxLength(3)
-    ent_photo.setText('0')
-    layout.addRow(QLabel(LabelTexts.PHOTO.value), ent_photo)
-    ent_video = QLineEdit()
-    ent_video.setMaxLength(3)
-    ent_video.setText('0')
-    layout.addRow(QLabel(LabelTexts.VIDEO.value), ent_video)
-    ent_income = QLineEdit()
-    ent_income.setMaxLength(3)
-    ent_income.setText('0')
-    layout.addRow(QLabel(LabelTexts.income.value), ent_income)
+    ent_date = QCalendarWidget()
+    layout.addRow('выберите дату', ent_date)
     lst_stock = QComboBox()
     lst_stock.addItems(stocks)
-    layout.addRow(QLabel(LabelTexts.Stock.value), lst_stock)
+    layout.addRow(QLabel(LabelTexts.STOCK.value), lst_stock)
+    ent_photo = field_insert(layout, 7, '0', LabelTexts.PHOTO.value)
+    ent_video = field_insert(layout, 7, '0', LabelTexts.VIDEO.value)
+    ent_income = field_insert(layout, 7, '0', LabelTexts.INCOME.value)
     btn_add = QPushButton(ButtonTexts.ADD.value)
     btn_add.clicked.connect(lambda: update_income(
-        ent_month.text(), ent_year.text(), ent_photo.text(), ent_video.text(),
-        ent_income.text(), lst_stock.currentText()
+        ent_date.monthShown(), ent_date.yearShown(), ent_photo.text(),
+        ent_video.text(), ent_income.text(), lst_stock.currentText()
     ))
     layout.addRow(btn_add)
 
@@ -71,8 +62,8 @@ def update_income(
     ''' Вносит доходы в БД '''
     if month_year_validate(month, year):
         return
-    if (int_validate(photo) or int_validate(video) or
-            float_validate(income)):
+    if (int_validate(photo) or int_validate(video)
+       or float_validate(income)):
         return
     if not stock:
         error = QMessageBox()
@@ -113,6 +104,10 @@ def update_income(
                     'income': float(income) + float(current_line[4]),
                     'stock': stock
                 })
+            new_values = [(month, 'month'), (year, 'year')]
+            cursor.executemany(
+                'UPDATE dates SET value=? WHERE period=?', new_values
+            )
             conn.commit()
     except Exception:
         error = QMessageBox()

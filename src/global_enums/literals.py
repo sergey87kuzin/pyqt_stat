@@ -3,6 +3,10 @@ from enum import Enum
 
 class Choices(Enum):
     GRAPHICS = ('Год суммарно', 'Месяц по стокам')
+    MONTHS = (
+        'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль',
+        'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+    )
 
 
 class Titles(Enum):
@@ -33,19 +37,29 @@ class InfoTexts(Enum):
 
 
 class ButtonTexts(Enum):
-    ADD_LOADS = 'Добавить загрузки'
-    MONTH_STATS = 'Посмотреть данные месяца'
-    YEAR_STATS = 'Посмотреть данные года'
-    ADD_INCOME = 'Внести доходы'
-    CREATE_STOCK = 'Создать сток'
-    GRAPHIC = 'График'
-    TOTAL = 'Суммарный итог'
+    ADD_LOADS = 'ОТЛОЖЕННЫЕ ЗАГРУЗКИ'
+    MONTH_STATS = 'ЗАГРУЗКИ МЕСЯЦА'
+    YEAR_STATS = 'ЗАГРУЗКИ ГОДА'
+    ADD_INCOME = 'СТАТИСТИКА'
+    CREATE_STOCK = 'ДОБАВИТЬ ФОТОБАНК'
+    GRAPHIC = 'ГРАФИК ЗА ГОД'
+    STOCK_GRAPHIC = 'ГРАФИК ПО СТОКАМ'
+    TOTAL = 'ИТОГИ ГОДА'
     ADD = 'Внести'
-    SAVE = 'сохранить'
-    CREATE = 'создать'
+    SAVE = 'Сохранить'
+    CREATE = 'Создать'
     PLOT = 'Построить'
     SHOW = 'Показать'
     SHOW_STATS = 'Показать статистику'
+    PREV = 'Предыдущий месяц'
+    NEXT = 'Следующий месяц'
+    PREV_YEAR = 'Предыдущий год'
+    NEXT_YEAR = 'Следующий год'
+    BACK_COLOR = 'Цвет фона'
+    BUTTON_COLOR = 'Цвет кнопки'
+    FONT_COLOR = 'Цвет текста'
+    PHOTO_COLOR = 'Цвет иконки фото'
+    VIDEO_COLOR = 'Цвет иконки видео'
 
 
 class ButtonNames(Enum):
@@ -61,15 +75,15 @@ class ButtonNames(Enum):
 class LabelTexts(Enum):
     SALES = 'Продажи'
     LOADS = 'Загрузки'
-    PHOTO = 'фотографии'
-    VIDEO = 'видео'
-    INCOME = 'доход'
-    STOCK = 'сток'
+    PHOTO = 'Фотографии'
+    VIDEO = 'Видео'
+    INCOME = 'Доход'
+    STOCK = 'Фотобанк'
     DATE = 'Дата'
     MONTH = 'Месяц'
-    YEAR = 'год'
+    YEAR = 'Год'
     CREATE_STOCK = 'Создайте сток'
-    GRAPHIC_TYPE = 'вид графика'
+    GRAPHIC_TYPE = 'Вид графика'
     MONTH_STATS = 'Статистика месяца'
     YEAR_STATS = 'Статистика года'
     GRAPHIC_TOP = 'Построение графика'
@@ -98,10 +112,16 @@ class LabelNames(Enum):
     TOTAL_YEAR = 'total_year_in'
 
 
+class Menus(Enum):
+    LOAD_MENU = 'Загрузки'
+    SALES_MENU = 'Продажи'
+    COLOR_MENU = 'Цвета'
+
+
 class ErrorMessages(Enum):
     WRONG_BUTTON_COUNT = 'Неверное число кнопок'
     WRONG_BUTTON_NAME = 'Неверное название кнопки'
-    WRONG_DATE_INPUT = 'Неверно сохранияется дата'
+    WRONG_DATE_INPUT = 'Неверно сохраняется дата'
     WRONG_MONTH_INPUT = 'Неверно сохраняется месяц'
     WRONG_YEAR_INPUT = 'Неверно сохраняется год'
     WRONG_VIDEO_INPUT = 'Неверно сохраняется количество видео'

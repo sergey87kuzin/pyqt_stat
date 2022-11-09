@@ -1,5 +1,5 @@
 import calendar
-from tkinter import messagebox
+from PyQt5.QtWidgets import QMessageBox
 from src.global_enums.literals import Titles, InfoTexts
 
 
@@ -8,33 +8,35 @@ def month_year_validate(month, year):
         month = int(month)
         year = int(year)
     except Exception:
-        messagebox.showinfo(
-            title=Titles.WARN_TITLE.value,
-            message=InfoTexts.WRONG_TYPE.value
-        )
+        error = QMessageBox()
+        error.setWindowTitle(Titles.WARN_TITLE.value)
+        error.setText(InfoTexts.WRONG_TYPE.value)
+        error.setIcon(QMessageBox.Warning)
+        error.setStandardButtons(QMessageBox.Ok)
+        error.exec_()
         return True
-    if (not month or not year or month < 1 or month > 12 or
-            year < 1 or year > 99):
-        messagebox.showinfo(
-            title=Titles.WARN_TITLE.value,
-            message=InfoTexts.WRONG_INPUT.value
-        )
+    if (not month or not year or month < 1 or month > 12
+            or year < 2001 or year > 2099):
+        error = QMessageBox()
+        error.setWindowTitle(Titles.WARN_TITLE.value)
+        error.setText(InfoTexts.WRONG_INPUT.value)
+        error.setIcon(QMessageBox.Warning)
+        error.setStandardButtons(QMessageBox.Ok)
+        error.exec_()
         return True
 
 
 def date_validate(day, month, year):
-    days = calendar.TextCalendar(firstweekday=0).formatmonth(
-        int('20' + year), int(month)
-    )
+    days = calendar.TextCalendar(firstweekday=0).formatmonth(year, month)
     if int(day) <= 0:
         return True
-    if day[0] == '0':
-        day = day[-1]
-    if day not in days:
-        messagebox.showinfo(
-            title=Titles.WARN_TITLE.value,
-            message=InfoTexts.WRONG_INPUT.value
-        )
+    if str(day) not in days:
+        error = QMessageBox()
+        error.setWindowTitle(Titles.WARN_TITLE.value)
+        error.setText(InfoTexts.WRONG_INPUT.value)
+        error.setIcon(QMessageBox.Warning)
+        error.setStandardButtons(QMessageBox.Ok)
+        error.exec_()
         return True
 
 
@@ -46,10 +48,12 @@ def int_validate(value):
         if value < 0:
             raise TypeError
     except Exception:
-        messagebox.showinfo(
-            title=Titles.WARN_TITLE.value,
-            message=InfoTexts.WRONG_INPUT.value
-        )
+        error = QMessageBox()
+        error.setWindowTitle(Titles.WARN_TITLE.value)
+        error.setText(InfoTexts.WRONG_INPUT.value)
+        error.setIcon(QMessageBox.Warning)
+        error.setStandardButtons(QMessageBox.Ok)
+        error.exec_()
         return True
 
 
@@ -61,8 +65,10 @@ def float_validate(value):
         if value < 0:
             raise TypeError
     except Exception:
-        messagebox.showinfo(
-            title=Titles.WARN_TITLE.value,
-            message=InfoTexts.WRONG_INPUT.value
-        )
+        error = QMessageBox()
+        error.setWindowTitle(Titles.WARN_TITLE.value)
+        error.setText(InfoTexts.WRONG_INPUT.value)
+        error.setIcon(QMessageBox.Warning)
+        error.setStandardButtons(QMessageBox.Ok)
+        error.exec_()
         return True

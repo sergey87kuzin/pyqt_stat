@@ -1,23 +1,18 @@
+import re
+import sqlite3
 import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QFormLayout,
-    QWidget,
-    QAction,
-    QMenuBar
-)
+
 from PyQt5.QtCore import QRect
 from PyQt5.QtGui import QIcon
-from pages import (
-    add_loads, add_income, create_stock, month_stats,
-    year_stats, graphic, total
-)
-from src.global_enums.literals import (
-    Titles, ButtonTexts
-)
-from src.helper import start_sql
-from src.stylesheets import StyleSheet
+from PyQt5.QtWidgets import (QAction, QApplication, QColorDialog, QFormLayout,
+                             QMainWindow, QMenuBar, QMessageBox, QWidget)
+
+from configure import DB_NAME
+from pages import (add_income, add_loads, create_stock, graphic, month_stats,
+                   total, year_stats)
+from src.global_enums.literals import ButtonTexts, Titles, Menus
+from src.helper import resource_path, start_sql
+from src.stylesheets import COLOR_PATTERNS
 
 
 class StockWindow(QMainWindow):
@@ -26,8 +21,30 @@ class StockWindow(QMainWindow):
 
         self.setWindowTitle(Titles.ROOT_TITLE.value)
         self.layout = QFormLayout()
-        geometry = QRect(0, 0, 300, 300)
-        self.setGeometry(geometry)
+        self.setGeometry(QRect(0, 0, 400, 300))
+        try:
+            with sqlite3.connect(resource_path(DB_NAME)) as conn:
+                cursor = conn.cursor()
+                init_style = cursor.execute(
+                    '''SELECT widget, style FROM stylesheets WHERE
+                    widget IN (:main, :photo, :video)''',
+                    {'main': 'main', 'photo': 'photo', 'video': 'video'}
+                ).fetchall()
+                for line in init_style:
+                    if line[0] == 'main':
+                        self.setStyleSheet(line[1])
+                    elif line[0] == 'photo':
+                        self.photo = line[1]
+                    else:
+                        self.video = line[1]
+        except Exception as e:
+            error = QMessageBox()
+            error.setWindowTitle(Titles.WARN_TITLE.value)
+            error.setText(str(e))
+            error.setIcon(QMessageBox.Warning)
+            error.setStandardButtons(QMessageBox.Ok)
+            error.exec_()
+            return
 
         self.create_menu()
 
@@ -39,24 +56,41 @@ class StockWindow(QMainWindow):
     def create_menu(self):
         main_menu = QMenuBar(self)
         self.setMenuBar(main_menu)
-        load_menu = main_menu.addMenu('Loads')
-        sale_menu = main_menu.addMenu('Sales')
+        load_menu = main_menu.addMenu(Menus.LOAD_MENU.value)
+        sale_menu = main_menu.addMenu(Menus.SALES_MENU.value)
+        color_menu = main_menu.addMenu(Menus.COLOR_MENU.value)
 
         items = [
             (ButtonTexts.ADD_LOADS.value, 'A',
              lambda: add_loads.add_loads(self.layout), load_menu),
             (ButtonTexts.MONTH_STATS.value, 'M',
-             lambda: month_stats.month_stats(self.layout), load_menu),
+             lambda: month_stats.month_stats(
+                 self.layout, self.photo, self.video
+             ), load_menu),
             (ButtonTexts.YEAR_STATS.value, 'Y',
-             lambda: year_stats.year_stats(self.layout), load_menu),
+             lambda: year_stats.year_stats(
+                 self.layout, self.photo, self.video
+             ), load_menu),
             (ButtonTexts.ADD_INCOME.value, 'I',
              lambda: add_income.add_income(self.layout), sale_menu),
             (ButtonTexts.CREATE_STOCK.value, 'C',
              lambda: create_stock.create_stock(self.layout), sale_menu),
             (ButtonTexts.GRAPHIC.value, 'G',
-             lambda: graphic.graphic(self.layout), sale_menu),
+             lambda: graphic.year_chart(self.layout), sale_menu),
+            (ButtonTexts.STOCK_GRAPHIC.value, 'S',
+             lambda: graphic.stock_chart(self.layout), sale_menu),
             (ButtonTexts.TOTAL.value, 'T',
-             lambda: total.total(self.layout), sale_menu)
+             lambda: total.total(self.layout), sale_menu),
+            (ButtonTexts.BACK_COLOR.value, 'B',
+             lambda: self.change_color(*COLOR_PATTERNS[0]), color_menu),
+            (ButtonTexts.BUTTON_COLOR.value, 'P',
+             lambda: self.change_color(*COLOR_PATTERNS[1]), color_menu),
+            (ButtonTexts.FONT_COLOR.value, 'Ctrl+F',
+             lambda: self.change_color(*COLOR_PATTERNS[2]), color_menu),
+            (ButtonTexts.PHOTO_COLOR.value, 'F',
+             lambda: self.change_icon_color('photo'), color_menu),
+            (ButtonTexts.VIDEO_COLOR.value, 'V',
+             lambda: self.change_icon_color('video'), color_menu)
         ]
         for item in items:
             self.add_menu_item(*item)
@@ -67,12 +101,60 @@ class StockWindow(QMainWindow):
         menu_item.triggered.connect(function)
         menu.addAction(menu_item)
 
+    def change_color(self, pattern, repl):
+        try:
+            with sqlite3.connect(resource_path(DB_NAME)) as conn:
+                cursor = conn.cursor()
+                init_style = cursor.execute(
+                    ''' SELECT style FROM stylesheets
+                    WHERE widget=:widget''', {'widget': 'main'}
+                ).fetchone()[0]
+                color = QColorDialog.getColor()
+                if not color.isValid():
+                    return
+                replace = repl % color.name()
+                style = re.sub(pattern, replace, init_style, 1)
+                self.setStyleSheet(style)
+                cursor.execute('''UPDATE stylesheets SET style=:style
+                               WHERE widget=:widget''',
+                               {'style': style, 'widget': 'main'})
+        except Exception as e:
+            error = QMessageBox()
+            error.setWindowTitle(Titles.WARN_TITLE.value)
+            error.setText(str(e))
+            error.setIcon(QMessageBox.Warning)
+            error.setStandardButtons(QMessageBox.Ok)
+            error.exec_()
+            return
+
+    def change_icon_color(self, indicator):
+        color = QColorDialog.getColor()
+        if not color.isValid():
+            return
+        if indicator == 'photo':
+            self.photo = color
+        else:
+            self.video = color
+        try:
+            with sqlite3.connect(resource_path(DB_NAME)) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''UPDATE stylesheets SET style=:style
+                               WHERE widget=:widget''',
+                               {'style': color.name(), 'widget': indicator})
+        except Exception as e:
+            error = QMessageBox()
+            error.setWindowTitle(Titles.WARN_TITLE.value)
+            error.setText(str(e))
+            error.setIcon(QMessageBox.Warning)
+            error.setStandardButtons(QMessageBox.Ok)
+            error.exec_()
+            return
+
 
 if __name__ == '__main__':
     start_sql()
     app = QApplication(sys.argv)
-    app.setStyleSheet(StyleSheet)
     window = StockWindow()
     window.show()
 
-    app.exec()
+    sys.exit(app.exec())
