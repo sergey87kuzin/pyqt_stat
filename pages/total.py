@@ -3,10 +3,9 @@ import locale
 import sqlite3
 
 from configure import DB_NAME
-from PyQt5.QtWidgets import (QGridLayout, QMessageBox, QPushButton,
-                             QTableWidget, QTableWidgetItem)
-from src.global_enums.literals import ButtonTexts, InfoTexts, Titles
-from src.helper import clean_layout, resource_path, get_month
+from PyQt5.QtWidgets import QMessageBox, QTableWidget, QTableWidgetItem, QLabel
+from src.global_enums.literals import InfoTexts, Titles
+from src.helper import add_year_buttons, clean_layout, get_month, resource_path
 
 
 def total(layout):
@@ -37,14 +36,13 @@ def show_total(layout, year):
                 {'year': year}
             ).fetchall()
     except Exception:
-        error = QMessageBox()
-        error.setWindowTitle(Titles.WARN_TITLE.value)
-        error.setText(InfoTexts.CHOOSE_GRAPH.value)
-        error.setIcon(QMessageBox.Warning)
-        error.setStandardButtons(QMessageBox.Ok)
-        error.exec_()
+        QMessageBox.warning(
+            layout.parentWidget(), Titles.WARN_TITLE.value,
+            InfoTexts.ERROR_TEXT.value
+        )
         return
 
+    layout.addRow(QLabel(str(year)))
     # заполняю таблицу данными по продажам стоков по месяцам и суммарно
     table = QTableWidget()
     table.setColumnCount(len(stocks) + 1)
@@ -75,15 +73,5 @@ def show_total(layout, year):
     layout.addRow(table)
 
     # добавляю кнопки для перехода к другому году
-    btn_prev = QPushButton(ButtonTexts.PREV_YEAR.value)
-    btn_prev.clicked.connect(
-        lambda: show_total(layout, year - 1)
-    )
-    btn_next = QPushButton(ButtonTexts.NEXT_YEAR.value)
-    btn_next.clicked.connect(
-        lambda: show_total(layout, year + 1)
-    )
-    button_layout = QGridLayout()
-    button_layout.addWidget(btn_prev, 0, 0)
-    button_layout.addWidget(btn_next, 0, 1)
+    button_layout = add_year_buttons(layout, show_total, year)
     layout.addRow(button_layout)

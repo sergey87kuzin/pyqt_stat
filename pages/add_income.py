@@ -1,14 +1,16 @@
 import sqlite3
 import sys
+from datetime import datetime
+from PyQt5.QtCore import QDate
 from PyQt5.QtWidgets import (
-    QPushButton, QLabel, QMessageBox, QComboBox, QCalendarWidget
+    QPushButton, QLabel, QMessageBox, QComboBox, QDateEdit
 )
 from src.helper import (
     resource_path, clean_layout, create_sales_month_data, field_insert
 )
 from src.validators import month_year_validate, int_validate, float_validate
 from src.global_enums.literals import (
-    Titles, InfoTexts, LabelTexts, ButtonTexts,  # ButtonNames, LabelNames
+    Titles, InfoTexts, LabelTexts, ButtonTexts,
 )
 from configure import DB_NAME
 
@@ -20,44 +22,42 @@ def add_income(layout):
             cursor = conn.cursor()
             stocks = cursor.execute('SELECT stock FROM stocks').fetchall()
             if not stocks:
-                error = QMessageBox()
-                error.setWindowTitle(Titles.WARN_TITLE.value)
-                error.setText(InfoTexts.WARN_STOCK_TEXT.value)
-                error.setIcon(QMessageBox.Warning)
-                error.setStandardButtons(QMessageBox.Ok)
-                error.exec_()
+                QMessageBox.warning(
+                    layout.parentWidget(), Titles.WARN_TITLE.value,
+                    InfoTexts.WARN_STOCK_TEXT.value
+                )
                 return
     except Exception as e:
-        error = QMessageBox()
-        error.setWindowTitle(Titles.WARN_TITLE.value)
-        error.setText(str(e))
-        error.setIcon(QMessageBox.Warning)
-        error.setStandardButtons(QMessageBox.Ok)
-        error.exec_()
+        QMessageBox.warning(
+            layout.parentWidget(), Titles.WARN_TITLE.value, str(e)
+        )
         return
 
     clean_layout(layout)
+    today = (datetime.now().year, datetime.now().month, datetime.now().day)
     stocks = [stock[0] for stock in stocks]
-    QLabel(LabelTexts.SALES.value)
     layout.addRow(QLabel(LabelTexts.SALES.value))
-    ent_date = QCalendarWidget()
-    layout.addRow('выберите дату', ent_date)
+    ent_date = QDateEdit(QDate(*today))
+    ent_date.setCalendarPopup(True)
+    layout.addRow(LabelTexts.DATE.value, ent_date)
     lst_stock = QComboBox()
     lst_stock.addItems(stocks)
+    lst_stock.setCurrentText(stocks[0])
     layout.addRow(QLabel(LabelTexts.STOCK.value), lst_stock)
     ent_photo = field_insert(layout, 7, '0', LabelTexts.PHOTO.value)
     ent_video = field_insert(layout, 7, '0', LabelTexts.VIDEO.value)
     ent_income = field_insert(layout, 7, '0', LabelTexts.INCOME.value)
     btn_add = QPushButton(ButtonTexts.ADD.value)
     btn_add.clicked.connect(lambda: update_income(
-        ent_date.monthShown(), ent_date.yearShown(), ent_photo.text(),
-        ent_video.text(), ent_income.text(), lst_stock.currentText()
+        layout, ent_date.date().getDate()[2], ent_date.date().getDate()[1],
+        ent_photo.text(), ent_video.text(), ent_income.text(),
+        lst_stock.currentText()
     ))
     layout.addRow(btn_add)
 
 
 def update_income(
-    month, year, photo, video, income, stock
+    layout, month, year, photo, video, income, stock
 ):
     ''' Вносит доходы в БД '''
     if month_year_validate(month, year):
@@ -66,12 +66,10 @@ def update_income(
        or float_validate(income)):
         return
     if not stock:
-        error = QMessageBox()
-        error.setWindowTitle(Titles.WARN_TITLE.value)
-        error.setText(InfoTexts.WARN_NO_STOCK.value)
-        error.setIcon(QMessageBox.Warning)
-        error.setStandardButtons(QMessageBox.Ok)
-        error.exec_()
+        QMessageBox.warning(
+            layout.parentWidget(), Titles.WARN_TITLE.value,
+            InfoTexts.WARN_NO_STOCK.value
+        )
         return
     try:
         with sqlite3.connect(resource_path(DB_NAME)) as conn:
@@ -110,17 +108,13 @@ def update_income(
             )
             conn.commit()
     except Exception:
-        error = QMessageBox()
-        error.setWindowTitle(Titles.WARN_TITLE.value)
-        error.setText(InfoTexts.ERROR_TEXT.value)
-        error.setIcon(QMessageBox.Warning)
-        error.setStandardButtons(QMessageBox.Ok)
-        error.exec_()
+        QMessageBox.warning(
+            layout.parentWidget(), Titles.WARN_TITLE.value,
+            InfoTexts.ERROR_TEXT.value
+        )
         return
     if 'pytest' not in sys.modules:
-        error = QMessageBox()
-        error.setWindowTitle(Titles.SUCCESS_TITLE.value)
-        error.setText(InfoTexts.SUCCESS_TEXT.value)
-        error.setIcon(QMessageBox.Warning)
-        error.setStandardButtons(QMessageBox.Ok)
-        error.exec_()
+        QMessageBox.warning(
+            layout.parentWidget(), Titles.WARN_TITLE.value,
+            InfoTexts.SUCCESS_TEXT.value
+        )

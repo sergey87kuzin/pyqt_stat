@@ -17,6 +17,12 @@ QDateEdit {
 QPushButton {color: black;}
 # QPushButton:hover {background: #ff0000;}
 # QPushButton:pressed {background-color: blue;}
+QLabel {
+    padding-bottom: 0px;
+    padding-top: 0px;
+    marging-top: 0px;
+    marging-bottom: 0px;
+}
 '''
 
 COLOR_PATTERNS = ((r'background-color: [#0-9a-zA-F]+',

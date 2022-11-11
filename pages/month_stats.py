@@ -32,12 +32,10 @@ def show_stats(layout, month, year, photo_col, video_col):
                 'UPDATE dates SET value=? WHERE period=?', new_values
             )
     except Exception:
-        error = QMessageBox()
-        error.setWindowTitle(Titles.WARN_TITLE.value)
-        error.setText(InfoTexts.ERROR_TEXT.value)
-        error.setIcon(QMessageBox.Warning)
-        error.setStandardButtons(QMessageBox.Ok)
-        error.exec_()
+        QMessageBox.warning(
+            layout.parentWidget(), Titles.WARN_TITLE.value,
+            InfoTexts.ERROR_TEXT.value
+        )
         return True
     if not results:
         results = create_month_data(month, year)

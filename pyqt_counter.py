@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (QAction, QApplication, QColorDialog, QFormLayout,
 from configure import DB_NAME
 from pages import (add_income, add_loads, create_stock, graphic, month_stats,
                    total, year_stats)
-from src.global_enums.literals import ButtonTexts, Titles, Menus
+from src.global_enums.literals import ButtonTexts, InfoTexts, Menus, Titles
 from src.helper import resource_path, start_sql
 from src.stylesheets import COLOR_PATTERNS
 
@@ -37,13 +37,11 @@ class StockWindow(QMainWindow):
                         self.photo = line[1]
                     else:
                         self.video = line[1]
-        except Exception as e:
-            error = QMessageBox()
-            error.setWindowTitle(Titles.WARN_TITLE.value)
-            error.setText(str(e))
-            error.setIcon(QMessageBox.Warning)
-            error.setStandardButtons(QMessageBox.Ok)
-            error.exec_()
+        except Exception:
+            QMessageBox.warning(
+                self, Titles.WARN_TITLE.value,
+                InfoTexts.ERROR_TEXT.value
+            )
             return
 
         self.create_menu()
@@ -54,49 +52,49 @@ class StockWindow(QMainWindow):
         self.setCentralWidget(widget)
 
     def create_menu(self):
-        main_menu = QMenuBar(self)
-        self.setMenuBar(main_menu)
-        load_menu = main_menu.addMenu(Menus.LOAD_MENU.value)
-        sale_menu = main_menu.addMenu(Menus.SALES_MENU.value)
-        color_menu = main_menu.addMenu(Menus.COLOR_MENU.value)
+        self.main_menu = QMenuBar(self)
+        self.setMenuBar(self.main_menu)
+        self.load_menu = self.main_menu.addMenu(Menus.LOAD_MENU.value)
+        self.sale_menu = self.main_menu.addMenu(Menus.SALES_MENU.value)
+        self.color_menu = self.main_menu.addMenu(Menus.COLOR_MENU.value)
 
         items = [
             (ButtonTexts.ADD_LOADS.value, 'A',
-             lambda: add_loads.add_loads(self.layout), load_menu),
+             lambda: add_loads.add_loads(self.layout), self.load_menu),
             (ButtonTexts.MONTH_STATS.value, 'M',
              lambda: month_stats.month_stats(
                  self.layout, self.photo, self.video
-             ), load_menu),
+             ), self.load_menu),
             (ButtonTexts.YEAR_STATS.value, 'Y',
              lambda: year_stats.year_stats(
                  self.layout, self.photo, self.video
-             ), load_menu),
+             ), self.load_menu),
             (ButtonTexts.ADD_INCOME.value, 'I',
-             lambda: add_income.add_income(self.layout), sale_menu),
+             lambda: add_income.add_income(self.layout), self.sale_menu),
             (ButtonTexts.CREATE_STOCK.value, 'C',
-             lambda: create_stock.create_stock(self.layout), sale_menu),
+             lambda: create_stock.create_stock(self.layout), self.sale_menu),
             (ButtonTexts.GRAPHIC.value, 'G',
-             lambda: graphic.year_chart(self.layout), sale_menu),
+             lambda: graphic.year_chart(self.layout), self.sale_menu),
             (ButtonTexts.STOCK_GRAPHIC.value, 'S',
-             lambda: graphic.stock_chart(self.layout), sale_menu),
+             lambda: graphic.stock_chart(self.layout), self.sale_menu),
             (ButtonTexts.TOTAL.value, 'T',
-             lambda: total.total(self.layout), sale_menu),
+             lambda: total.total(self.layout), self.sale_menu),
             (ButtonTexts.BACK_COLOR.value, 'B',
-             lambda: self.change_color(*COLOR_PATTERNS[0]), color_menu),
+             lambda: self.change_color(*COLOR_PATTERNS[0]), self.color_menu),
             (ButtonTexts.BUTTON_COLOR.value, 'P',
-             lambda: self.change_color(*COLOR_PATTERNS[1]), color_menu),
+             lambda: self.change_color(*COLOR_PATTERNS[1]), self.color_menu),
             (ButtonTexts.FONT_COLOR.value, 'Ctrl+F',
-             lambda: self.change_color(*COLOR_PATTERNS[2]), color_menu),
+             lambda: self.change_color(*COLOR_PATTERNS[2]), self.color_menu),
             (ButtonTexts.PHOTO_COLOR.value, 'F',
-             lambda: self.change_icon_color('photo'), color_menu),
+             lambda: self.change_icon_color('photo'), self.color_menu),
             (ButtonTexts.VIDEO_COLOR.value, 'V',
-             lambda: self.change_icon_color('video'), color_menu)
+             lambda: self.change_icon_color('video'), self.color_menu)
         ]
         for item in items:
             self.add_menu_item(*item)
 
     def add_menu_item(self, text, shortcut, function, menu):
-        menu_item = QAction(QIcon(''), text, self)
+        menu_item = QAction(QIcon(''), text, menu)
         menu_item.setShortcut(shortcut)
         menu_item.triggered.connect(function)
         menu.addAction(menu_item)
@@ -118,13 +116,11 @@ class StockWindow(QMainWindow):
                 cursor.execute('''UPDATE stylesheets SET style=:style
                                WHERE widget=:widget''',
                                {'style': style, 'widget': 'main'})
-        except Exception as e:
-            error = QMessageBox()
-            error.setWindowTitle(Titles.WARN_TITLE.value)
-            error.setText(str(e))
-            error.setIcon(QMessageBox.Warning)
-            error.setStandardButtons(QMessageBox.Ok)
-            error.exec_()
+        except Exception:
+            QMessageBox.warning(
+                self, Titles.WARN_TITLE.value,
+                InfoTexts.ERROR_TEXT.value
+            )
             return
 
     def change_icon_color(self, indicator):
@@ -141,13 +137,11 @@ class StockWindow(QMainWindow):
                 cursor.execute('''UPDATE stylesheets SET style=:style
                                WHERE widget=:widget''',
                                {'style': color.name(), 'widget': indicator})
-        except Exception as e:
-            error = QMessageBox()
-            error.setWindowTitle(Titles.WARN_TITLE.value)
-            error.setText(str(e))
-            error.setIcon(QMessageBox.Warning)
-            error.setStandardButtons(QMessageBox.Ok)
-            error.exec_()
+        except Exception:
+            QMessageBox.warning(
+                self, Titles.WARN_TITLE.value,
+                InfoTexts.ERROR_TEXT.value
+            )
             return
 
 

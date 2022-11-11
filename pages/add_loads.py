@@ -23,19 +23,18 @@ def add_loads(layout):
     layout.addRow(lbl_loads)
     ent_date = QDateEdit(QDate(*today))
     ent_date.setCalendarPopup(True)
-    ent_date.setDate(QDate())
-    layout.addRow('выберите дату', ent_date)
+    layout.addRow(LabelTexts.DATE.value, ent_date)
     ent_photo = field_insert(layout, 7, '0', LabelTexts.PHOTO.value)
     ent_video = field_insert(layout, 7, '0', LabelTexts.VIDEO.value)
     btn_add = QPushButton(ButtonTexts.SAVE.value)
     btn_add.clicked.connect(lambda: save_loads(
-        ent_date.date().getDate()[2], ent_date.date().getDate()[1],
+        layout, ent_date.date().getDate()[2], ent_date.date().getDate()[1],
         ent_date.date().getDate()[0], ent_photo.text(), ent_video.text()
     ))
     layout.addRow(btn_add)
 
 
-def save_loads(day, month, year, photo, video):
+def save_loads(layout, day, month, year, photo, video):
     ''' сохранение внесенных данных о загрузках '''
     if month_year_validate(month, year):
         return
@@ -70,17 +69,12 @@ def save_loads(day, month, year, photo, video):
             )
             conn.commit()
     except Exception as e:
-        error = QMessageBox()
-        error.setWindowTitle(Titles.WARN_TITLE.value)
-        error.setText(str(e))
-        error.setIcon(QMessageBox.Warning)
-        error.setStandardButtons(QMessageBox.Ok)
-        error.exec_()
+        QMessageBox.warning(
+            layout.parentWidget(), Titles.WARN_TITLE.value, str(e)
+        )
         return
     if 'pytest' not in sys.modules:
-        error = QMessageBox()
-        error.setWindowTitle(Titles.SUCCESS_TITLE.value)
-        error.setText(InfoTexts.SUCCESS_TEXT.value)
-        error.setIcon(QMessageBox.Warning)
-        error.setStandardButtons(QMessageBox.Ok)
-        error.exec_()
+        QMessageBox.warning(
+            layout.parentWidget(), Titles.WARN_TITLE.value,
+            InfoTexts.SUCCESS_TEXT.value
+        )

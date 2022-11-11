@@ -28,21 +28,16 @@ def year_graph(layout, year):
                 {'year': year}
             ).fetchall()
             if not data:
-                error = QMessageBox()
-                error.setWindowTitle(Titles.WARN_TITLE.value)
-                error.setText(InfoTexts.NO_YEAR_DATA.value)
-                error.setIcon(QMessageBox.Warning)
-                error.setStandardButtons(QMessageBox.Ok)
-                error.exec_()
+                QMessageBox.warning(
+                    layout.parentWidget(), Titles.WARN_TITLE.value,
+                    InfoTexts.NO_YEAR_DATA.value
+                )
                 return
-    except Exception as e:
-        error = QMessageBox()
-        error.setWindowTitle(Titles.WARN_TITLE.value)
-        # error.setText(InfoTexts.ERROR_TEXT.value)
-        error.setText(str(e))
-        error.setIcon(QMessageBox.Warning)
-        error.setStandardButtons(QMessageBox.Ok)
-        error.exec_()
+    except Exception:
+        QMessageBox.warning(
+            layout.parentWidget(), Titles.WARN_TITLE.value,
+            InfoTexts.ERROR_TEXT.value
+        )
         return
     graphics = (('photo', 1), ('video', 2), ('income', 3))
     for graphic in graphics:
@@ -70,21 +65,16 @@ def stock_graph(layout, month, year):
                 {'month': month, 'year': year}
             ).fetchall()
             if not data:
-                error = QMessageBox()
-                error.setWindowTitle(Titles.WARN_TITLE.value)
-                error.setText(InfoTexts.NO_MONTH_DATA.value)
-                error.setIcon(QMessageBox.Warning)
-                error.setStandardButtons(QMessageBox.Ok)
-                error.exec_()
+                QMessageBox.warning(
+                    layout.parentWidget(), Titles.WARN_TITLE.value,
+                    InfoTexts.NO_MONTH_DATA.value
+                )
                 return
-    except Exception as e:
-        error = QMessageBox()
-        error.setWindowTitle(Titles.WARN_TITLE.value)
-        # error.setText(InfoTexts.ERROR_TEXT.value)
-        error.setText(str(e))
-        error.setIcon(QMessageBox.Warning)
-        error.setStandardButtons(QMessageBox.Ok)
-        error.exec_()
+    except Exception:
+        QMessageBox.warning(
+            layout.parentWidget(), Titles.WARN_TITLE.value,
+            InfoTexts.ERROR_TEXT.value
+        )
         return
     graphics = (('photo', 1), ('video', 2), ('income', 3))
     for graphic in graphics:

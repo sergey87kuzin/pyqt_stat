@@ -79,7 +79,7 @@ class LabelTexts(Enum):
     VIDEO = 'Видео'
     INCOME = 'Доход'
     STOCK = 'Фотобанк'
-    DATE = 'Дата'
+    DATE = 'Выберите дату'
     MONTH = 'Месяц'
     YEAR = 'Год'
     CREATE_STOCK = 'Создайте сток'
