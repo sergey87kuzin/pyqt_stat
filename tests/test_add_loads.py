@@ -1,7 +1,11 @@
+import sqlite3
 from datetime import date
 
-from src.global_enums.literals import LabelTexts, ButtonTexts
+from configure import DB_NAME
 from pages import add_loads
+from PyQt5 import QtCore
+from src.global_enums.literals import ButtonTexts, LabelTexts
+from src.helper import resource_path
 
 
 def test_texts(app, qtbot):
@@ -41,8 +45,29 @@ def test_texts(app, qtbot):
         assert label == row[0]
         assert value == row[1]
 
-
-def test_button_texts(app):
-    add_loads.add_loads(app.layout)
-    button = app.layout.takeRow(4).fieldItem.widget().text()
+    button = app.layout.takeRow(0).fieldItem.widget().text()
     assert button == ButtonTexts.SAVE.value
+
+
+def test_button(app, qtbot, clear_db):
+    add_loads.add_loads(app.layout)
+    data = [(2020, 1, 1), '12', '13']
+    for value in data:
+        ent = app.layout.takeRow(1).fieldItem.widget()
+        try:
+            ent.setText(value)
+        except Exception:
+            ent.setDate(QtCore.QDate(*value))
+    button = app.layout.takeRow(1).fieldItem.widget()
+    qtbot.mouseClick(button, QtCore.Qt.LeftButton)
+
+    try:
+        with sqlite3.connect(resource_path(DB_NAME)) as conn:
+            cursor = conn.cursor()
+            result = cursor.execute(
+                'SELECT * FROM loads WHERE year=:year AND photo_load=:photo',
+                {'year': 2020, 'photo': 12}
+            ).fetchall()
+    except Exception as e:
+        print(str(e))
+    assert len(result) == 1

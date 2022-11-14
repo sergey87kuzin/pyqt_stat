@@ -31,6 +31,7 @@ def show_stats(layout, month, year, photo_col, video_col):
             cursor.executemany(
                 'UPDATE dates SET value=? WHERE period=?', new_values
             )
+            conn.commit()
     except Exception:
         QMessageBox.warning(
             layout.parentWidget(), Titles.WARN_TITLE.value,

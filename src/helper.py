@@ -6,7 +6,7 @@ from datetime import datetime
 
 from configure import DB_NAME
 from PyQt5.QtWidgets import (QGridLayout, QLabel, QLineEdit, QMessageBox,
-                             QPushButton)
+                             QPushButton, QFormLayout)
 
 from src.global_enums.literals import InfoTexts, Titles, ButtonTexts
 
@@ -41,13 +41,25 @@ def start_sql():
 
 def clean_layout(layout):
     ''' очистка рамки перед повторным использованием '''
-    while layout.count():
-        item = layout.takeAt(0)
-        widget = item.widget()
-        if widget is not None:
-            widget.setParent(None)
-        else:
-            clean_layout(item.layout())
+    if type(layout) == QFormLayout:
+        while layout.count():
+            line = layout.takeRow(0)
+            items = (line.labelItem, line.fieldItem)
+            for item in items:
+                if item:
+                    widget = item.widget()
+                    if widget:
+                        widget.setParent(None)
+                    else:
+                        clean_layout(item.layout())
+    else:
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.setParent(None)
+            else:
+                clean_layout(item.layout())
 
 
 def field_insert(layout, max_length, fill, name):

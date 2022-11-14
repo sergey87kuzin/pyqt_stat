@@ -61,6 +61,8 @@ def clear_db():
             cursor = conn.cursor()
             cursor.execute('DELETE FROM stocks')
             cursor.execute('DELETE FROM dates')
+            cursor.execute('DELETE FROM loads')
+            cursor.execute('DELETE FROM sales')
             conn.commit()
     except Exception as e:
         print(str(e))

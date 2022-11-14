@@ -35,6 +35,11 @@ def show_total(layout, year):
                 'SELECT month, stock, amount_sold FROM sales WHERE year=:year',
                 {'year': year}
             ).fetchall()
+            cursor.execute(
+                'UPDATE dates SET value=:value WHERE period=:period',
+                {'value': year, 'period': 'year'}
+            )
+            conn.commit()
     except Exception:
         QMessageBox.warning(
             layout.parentWidget(), Titles.WARN_TITLE.value,

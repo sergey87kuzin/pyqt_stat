@@ -49,7 +49,7 @@ def add_income(layout):
     ent_income = field_insert(layout, 7, '0', LabelTexts.INCOME.value)
     btn_add = QPushButton(ButtonTexts.ADD.value)
     btn_add.clicked.connect(lambda: update_income(
-        layout, ent_date.date().getDate()[2], ent_date.date().getDate()[1],
+        layout, ent_date.date().getDate()[1], ent_date.date().getDate()[0],
         ent_photo.text(), ent_video.text(), ent_income.text(),
         lst_stock.currentText()
     ))

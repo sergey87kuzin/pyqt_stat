@@ -18,14 +18,18 @@ def year_stats(layout, photo, video):
 def show_year_loads(layout, year, window, photo_col, video_col):
     ''' в отдельном окне рисует календарь на год с указанием загрузок '''
     if window:
-        window.accept()
+        # window.accept()
+        clean_layout(window.layout())
+        stat_layout = window.layout()
+    else:
+        window = QDialog(layout.parentWidget())
+        stat_layout = QGridLayout()
+        window.setLayout(stat_layout)
     clean_layout(layout)
     # данные по году из БД
     month_results = get_year_loads_data(layout, year)
     # отдельное окно и его layuot
-    window = QDialog(layout.parentWidget())
     window.setStyleSheet('QLabel {font: bold 10px;}')
-    stat_layout = QGridLayout()
     stat_layout.setVerticalSpacing(0)
     stat_layout.setHorizontalSpacing(10)
     stat_layout.addWidget(QLabel(str(year)), 0, 0)
@@ -64,7 +68,6 @@ def show_year_loads(layout, year, window, photo_col, video_col):
     stat_layout.addWidget(photo, 5, 1)
     stat_layout.addWidget(video, 5, 2)
     stat_layout.addLayout(button_layout, 6, 1, 1, 2)
-    window.setLayout(stat_layout)
     window.show()
 
 
@@ -82,6 +85,7 @@ def get_year_loads_data(layout, year):
                 'UPDATE dates SET value=:value WHERE period=:period',
                 {'value': year, 'period': 'year'}
             )
+            conn.commit()
     except Exception:
         QMessageBox.warning(
             layout.parentWidget(), Titles.WARN_TITLE.value,

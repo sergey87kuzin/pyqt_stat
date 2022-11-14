@@ -1,8 +1,12 @@
+import sqlite3
 from datetime import date
-from PyQt5.QtWidgets import QComboBox
 
-from src.global_enums.literals import LabelTexts, ButtonTexts
+from configure import DB_NAME
 from pages import add_income
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QComboBox
+from src.global_enums.literals import ButtonTexts, LabelTexts
+from src.helper import resource_path
 
 
 def test_texts(app, clear_db, add_stock):
@@ -25,8 +29,32 @@ def test_texts(app, clear_db, add_stock):
         assert label == row[0]
         assert value == row[1]
 
-
-def test_button_texts(app, clear_db, add_stock):
-    add_income.add_income(app.layout)
-    button = app.layout.takeRow(6).fieldItem.widget().text()
+    button = app.layout.takeRow(0).fieldItem.widget().text()
     assert button == ButtonTexts.ADD.value
+
+
+def test_button(app, qtbot, clear_db, add_stock):
+    add_income.add_income(app.layout)
+    data = ['stock_name', '12', '13', '130']
+    date = (2020, 1, 1)
+    ent_date = app.layout.takeRow(1).fieldItem.widget()
+    ent_date.setDate(QtCore.QDate(*date))
+    for value in data:
+        ent = app.layout.takeRow(1).fieldItem.widget()
+        try:
+            ent.setText(value)
+        except Exception:
+            ent.setCurrentText(value)
+    button = app.layout.takeRow(1).fieldItem.widget()
+    qtbot.mouseClick(button, QtCore.Qt.LeftButton)
+
+    try:
+        with sqlite3.connect(resource_path(DB_NAME)) as conn:
+            cursor = conn.cursor()
+            result = cursor.execute(
+                '''SELECT * FROM sales WHERE year=:year''',
+                {'year': 2020, 'photo': 12}
+            ).fetchall()
+    except Exception as e:
+        print(str(e))
+    assert len(result) == 1
