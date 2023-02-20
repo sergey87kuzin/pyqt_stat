@@ -1,18 +1,17 @@
+import logging
 import sqlite3
 import sys
 from datetime import datetime
-from PyQt5.QtCore import QDate
-from PyQt5.QtWidgets import (
-    QPushButton, QLabel, QMessageBox, QComboBox, QDateEdit
-)
-from src.helper import (
-    resource_path, clean_layout, create_sales_month_data, field_insert
-)
-from src.validators import month_year_validate, int_validate, float_validate
-from src.global_enums.literals import (
-    Titles, InfoTexts, LabelTexts, ButtonTexts,
-)
+
 from configure import DB_NAME
+from PyQt5.QtCore import QDate
+from PyQt5.QtWidgets import (QComboBox, QDateEdit, QLabel, QMessageBox,
+                             QPushButton)
+from src.global_enums.literals import (ButtonTexts, InfoTexts, LabelTexts,
+                                       Titles)
+from src.helper import (clean_layout, create_sales_month_data, field_insert,
+                        resource_path, send_to_queue)
+from src.validators import float_validate, int_validate, month_year_validate
 
 
 def add_income(layout):
@@ -28,6 +27,7 @@ def add_income(layout):
                 )
                 return
     except Exception as e:
+        logging.warning(str(e))
         QMessageBox.warning(
             layout.parentWidget(), Titles.WARN_TITLE.value, str(e)
         )
@@ -107,7 +107,9 @@ def update_income(
                 'UPDATE dates SET value=? WHERE period=?', new_values
             )
             conn.commit()
-    except Exception:
+    except Exception as e:
+        send_to_queue({'error': e})
+        logging.warning(str(e))
         QMessageBox.warning(
             layout.parentWidget(), Titles.WARN_TITLE.value,
             InfoTexts.ERROR_TEXT.value

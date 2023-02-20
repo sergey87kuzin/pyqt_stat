@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 
 from configure import DB_NAME
@@ -32,7 +33,8 @@ def show_stats(layout, month, year, photo_col, video_col):
                 'UPDATE dates SET value=? WHERE period=?', new_values
             )
             conn.commit()
-    except Exception:
+    except Exception as e:
+        logging.warning(str(e))
         QMessageBox.warning(
             layout.parentWidget(), Titles.WARN_TITLE.value,
             InfoTexts.ERROR_TEXT.value

@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  pyqtstat:
+    # image: pyqtstat
+    build:
+      context: .
+      dockerfile: ./Dockerfile

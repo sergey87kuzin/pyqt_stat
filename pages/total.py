@@ -1,5 +1,6 @@
 import calendar
 import locale
+import logging
 import sqlite3
 
 from configure import DB_NAME
@@ -40,7 +41,8 @@ def show_total(layout, year):
                 {'value': year, 'period': 'year'}
             )
             conn.commit()
-    except Exception:
+    except Exception as e:
+        logging.warning(str(e))
         QMessageBox.warning(
             layout.parentWidget(), Titles.WARN_TITLE.value,
             InfoTexts.ERROR_TEXT.value

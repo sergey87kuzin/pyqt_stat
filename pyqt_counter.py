@@ -1,3 +1,4 @@
+import logging
 import re
 import sqlite3
 import sys
@@ -19,9 +20,11 @@ class StockWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.set_log_config()
+
         self.setWindowTitle(Titles.ROOT_TITLE.value)
         self.layout = QFormLayout()
-        self.setGeometry(QRect(0, 0, 400, 300))
+        self.setGeometry(QRect(0, 0, 500, 300))
         try:
             with sqlite3.connect(resource_path(DB_NAME)) as conn:
                 cursor = conn.cursor()
@@ -37,7 +40,8 @@ class StockWindow(QMainWindow):
                         self.photo = line[1]
                     else:
                         self.video = line[1]
-        except Exception:
+        except Exception as e:
+            logging.warning(str(e))
             QMessageBox.warning(
                 self, Titles.WARN_TITLE.value,
                 InfoTexts.ERROR_TEXT.value
@@ -50,6 +54,16 @@ class StockWindow(QMainWindow):
         widget.setLayout(self.layout)
 
         self.setCentralWidget(widget)
+
+    def set_log_config(self):
+        # настройка логирования
+        logging.basicConfig(
+            level=logging.INFO,
+            filename=resource_path('main.log'),
+            filemode='w',
+            format=(''' %(asctime)s, %(levelname)s, %(name)s, %(message)s,
+                    %(funcName)s, %(lineno)d''')
+        )
 
     def create_menu(self):
         self.main_menu = QMenuBar(self)
@@ -116,7 +130,8 @@ class StockWindow(QMainWindow):
                 cursor.execute('''UPDATE stylesheets SET style=:style
                                WHERE widget=:widget''',
                                {'style': style, 'widget': 'main'})
-        except Exception:
+        except Exception as e:
+            logging.warning(str(e))
             QMessageBox.warning(
                 self, Titles.WARN_TITLE.value,
                 InfoTexts.ERROR_TEXT.value
@@ -137,7 +152,8 @@ class StockWindow(QMainWindow):
                 cursor.execute('''UPDATE stylesheets SET style=:style
                                WHERE widget=:widget''',
                                {'style': color.name(), 'widget': indicator})
-        except Exception:
+        except Exception as e:
+            logging.warning(str(e))
             QMessageBox.warning(
                 self, Titles.WARN_TITLE.value,
                 InfoTexts.ERROR_TEXT.value

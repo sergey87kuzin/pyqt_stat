@@ -42,4 +42,5 @@ def test_button(app, qtbot, db_month_insert, insert_colors):
             ).fetchall()
     except Exception as e:
         print(str(e))
-    assert result[0][1] == 10
+    current_month = datetime.now().month - 1 if datetime.now().month != 1 else 12
+    assert result[0][1] == current_month

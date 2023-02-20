@@ -39,7 +39,7 @@ class StockCounter():
     def on_closing(self):
         if messagebox.askokcancel(
             Titles.QUIT_TITLE.value, InfoTexts.QUIT_TEXT.value
-                ):
+        ):
             self.second_screen.quit()
             self.root.quit()
 

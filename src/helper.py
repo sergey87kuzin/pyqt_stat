@@ -1,8 +1,10 @@
 import calendar
+import json
 import os
 import sqlite3
 import sys
 from datetime import datetime
+import pika
 
 from configure import DB_NAME
 from PyQt5.QtWidgets import (QGridLayout, QLabel, QLineEdit, QMessageBox,
@@ -206,3 +208,20 @@ def add_year_buttons(layout, function, year, *args):
     button_layout.addWidget(btn_prev, 0, 0)
     button_layout.addWidget(btn_next, 0, 1)
     return button_layout
+
+
+def send_to_queue(data):
+    conn_params = pika.ConnectionParameters('localhost', 5672)
+    connection = pika.BlockingConnection(conn_params)
+    channel = connection.channel()
+    exchange = 'message_exchange'
+    routing_key = 'message_key'
+    body = json.dumps(data)
+    channel.exchange_declare(exchange=exchange, exchange_type='topic')
+    channel.basic_publish(
+        exchange=exchange, routing_key=routing_key, body=body,
+        properties=pika.BasicProperties(
+            delivery_mode=2  # сообщение помечается как устойчивое
+        )
+    )
+    connection.close()

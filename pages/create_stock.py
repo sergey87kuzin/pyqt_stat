@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 import sys
 
@@ -43,7 +44,8 @@ def save_stock(layout, stock_name):
             cursor.execute('INSERT INTO stocks VALUES (:stock)',
                            {'stock': stock_name})
             conn.commit()
-    except Exception:
+    except Exception as e:
+        logging.warning(str(e))
         QMessageBox.warning(
             layout.parentWidget(), Titles.WARN_TITLE.value,
             InfoTexts.ERROR_TEXT.value

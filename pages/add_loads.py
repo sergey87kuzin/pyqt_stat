@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 import sys
 from datetime import datetime
@@ -69,6 +70,7 @@ def save_loads(layout, day, month, year, photo, video):
             )
             conn.commit()
     except Exception as e:
+        logging.warning(str(e))
         QMessageBox.warning(
             layout.parentWidget(), Titles.WARN_TITLE.value, str(e)
         )
