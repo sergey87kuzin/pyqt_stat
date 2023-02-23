@@ -3,7 +3,7 @@ QWidget {
     background-color: white;
     color: black;
 }
-QPushButton {background-color: grey;
+.QPushButton {background-color: grey;
     font: bold italic 16pt 'Comic Sans MS';
     width: 75px ;
     height: 50px;
@@ -14,7 +14,7 @@ QPushButton {background-color: grey;
 QDateEdit {
     border: none;
 }
-QPushButton {color: black;}
+.QPushButton {color: black;}
 # QPushButton:hover {background: #ff0000;}
 # QPushButton:pressed {background-color: blue;}
 QLabel {

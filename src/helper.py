@@ -4,13 +4,13 @@ import os
 import sqlite3
 import sys
 from datetime import datetime
+
 import pika
-
 from configure import DB_NAME
-from PyQt5.QtWidgets import (QGridLayout, QLabel, QLineEdit, QMessageBox,
-                             QPushButton, QFormLayout)
+from PyQt5.QtWidgets import (QFormLayout, QGridLayout, QLabel, QLineEdit,
+                             QMessageBox, QPushButton, QVBoxLayout)
 
-from src.global_enums.literals import InfoTexts, Titles, ButtonTexts
+from src.global_enums.literals import ButtonTexts, InfoTexts, Titles
 
 from .validators import month_year_validate
 
@@ -62,6 +62,16 @@ def clean_layout(layout):
                 widget.setParent(None)
             else:
                 clean_layout(item.layout())
+
+
+def clean_frame(frame):
+    for widget in frame.children():
+        if type(widget) == QVBoxLayout:
+            while widget.count():
+                item = widget.takeAt(0)
+                ch_widget = item.widget()
+                if ch_widget:
+                    ch_widget.setParent(None)
 
 
 def field_insert(layout, max_length, fill, name):

@@ -3,17 +3,19 @@ import re
 import sqlite3
 import sys
 
-from PyQt5.QtCore import QRect
+from PyQt5.QtCore import QRect, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QAction, QApplication, QColorDialog, QFormLayout,
-                             QMainWindow, QMenuBar, QMessageBox, QWidget)
+                             QHBoxLayout, QMainWindow, QMenuBar, QMessageBox,
+                             QVBoxLayout, QWidget, QFrame)
 
 from configure import DB_NAME
 from pages import (add_income, add_loads, create_stock, graphic, month_stats,
                    total, year_stats)
 from src.global_enums.literals import ButtonTexts, InfoTexts, Menus, Titles
-from src.helper import resource_path, start_sql
+from src.helper import resource_path, start_sql, clean_frame
 from src.stylesheets import COLOR_PATTERNS
+from src.buttons import MenuButton, IconButton
 
 
 class StockWindow(QMainWindow):
@@ -23,7 +25,18 @@ class StockWindow(QMainWindow):
         self.set_log_config()
 
         self.setWindowTitle(Titles.ROOT_TITLE.value)
+        self.main_layout = QHBoxLayout()
+        self.left_frame = QFrame()
+        self.left_layout = QVBoxLayout()
+        self.center_layout = QVBoxLayout()
+        self.left_frame.setLayout(self.left_layout)
         self.layout = QFormLayout()
+        self.main_layout.addWidget(self.left_frame)
+        self.main_layout.setStretch(0, 5)
+        self.main_layout.addLayout(self.center_layout)
+        self.main_layout.setStretch(1, 1)
+        self.main_layout.addLayout(self.layout)
+        self.main_layout.setStretch(2, 10)
         self.setGeometry(QRect(0, 0, 500, 300))
         try:
             with sqlite3.connect(resource_path(DB_NAME)) as conn:
@@ -49,9 +62,11 @@ class StockWindow(QMainWindow):
             return
 
         self.create_menu()
+        self.create_left_menu()
+        self.create_center_buttons()
 
         widget = QWidget()
-        widget.setLayout(self.layout)
+        widget.setLayout(self.main_layout)
 
         self.setCentralWidget(widget)
 
@@ -66,13 +81,14 @@ class StockWindow(QMainWindow):
         )
 
     def create_menu(self):
+        ''' создание верхнего меню '''
         self.main_menu = QMenuBar(self)
         self.setMenuBar(self.main_menu)
         self.load_menu = self.main_menu.addMenu(Menus.LOAD_MENU.value)
         self.sale_menu = self.main_menu.addMenu(Menus.SALES_MENU.value)
         self.color_menu = self.main_menu.addMenu(Menus.COLOR_MENU.value)
 
-        items = [
+        self.items = [
             (ButtonTexts.ADD_LOADS.value, 'A',
              lambda: add_loads.add_loads(self.layout), self.load_menu),
             (ButtonTexts.MONTH_STATS.value, 'M',
@@ -102,18 +118,52 @@ class StockWindow(QMainWindow):
             (ButtonTexts.PHOTO_COLOR.value, 'F',
              lambda: self.change_icon_color('photo'), self.color_menu),
             (ButtonTexts.VIDEO_COLOR.value, 'V',
-             lambda: self.change_icon_color('video'), self.color_menu)
+             lambda: self.change_icon_color('video'), self.color_menu),
+            (ButtonTexts.MENU_TEXT_COLOR.value, 'Ctrl+T',
+             lambda: self.change_icon_color('text'), self.color_menu),
+            (ButtonTexts.MENU_BUTTON_COLOR.value, 'Ctrl+M',
+             lambda: self.change_icon_color('menu'), self.color_menu),
         ]
-        for item in items:
+
+        for item in self.items:
             self.add_menu_item(*item)
 
     def add_menu_item(self, text, shortcut, function, menu):
+        '''  '''
         menu_item = QAction(QIcon(''), text, menu)
         menu_item.setShortcut(shortcut)
         menu_item.triggered.connect(function)
         menu.addAction(menu_item)
 
+    def create_left_menu(self):
+        '''  '''
+        for item in self.items[:7]:
+            self.add_left_menu_item(*item)
+
+    def add_left_menu_item(self, name, shortcut, function, menu):
+        '''  '''
+        button = MenuButton(name)
+        button.setFlat(False)
+        button.clicked.connect(function)
+        self.left_layout.addWidget(button)
+
+    def create_center_buttons(self):
+        '''  '''
+        right_button = IconButton(QIcon('src/icons/arrow_right.png'))
+        left_button = IconButton(QIcon('src/icons/arrow_left.png'))
+        right_button.clicked.connect(
+            lambda: self.show_menu(right_button, left_button)
+        )
+        left_button.clicked.connect(
+            lambda: self.hide_menu(right_button, left_button)
+        )
+        right_button.hide()
+        self.center_layout.setAlignment(Qt.AlignTop)
+        self.center_layout.addWidget(right_button)
+        self.center_layout.addWidget(left_button)
+
     def change_color(self, pattern, repl):
+        '''  '''
         try:
             with sqlite3.connect(resource_path(DB_NAME)) as conn:
                 cursor = conn.cursor()
@@ -139,12 +189,13 @@ class StockWindow(QMainWindow):
             return
 
     def change_icon_color(self, indicator):
+        '''  '''
         color = QColorDialog.getColor()
         if not color.isValid():
             return
         if indicator == 'photo':
             self.photo = color
-        else:
+        elif indicator == 'video':
             self.video = color
         try:
             with sqlite3.connect(resource_path(DB_NAME)) as conn:
@@ -152,6 +203,9 @@ class StockWindow(QMainWindow):
                 cursor.execute('''UPDATE stylesheets SET style=:style
                                WHERE widget=:widget''',
                                {'style': color.name(), 'widget': indicator})
+            if indicator in ['text', 'menu']:
+                clean_frame(self.left_frame)
+                self.create_left_menu()
         except Exception as e:
             logging.warning(str(e))
             QMessageBox.warning(
@@ -159,6 +213,18 @@ class StockWindow(QMainWindow):
                 InfoTexts.ERROR_TEXT.value
             )
             return
+
+    def hide_menu(self, right_button, left_button):
+        '''  '''
+        self.left_frame.hide()
+        right_button.show()
+        left_button.hide()
+
+    def show_menu(self, right_button, left_button):
+        '''  '''
+        self.left_frame.show()
+        right_button.hide()
+        left_button.show()
 
 
 if __name__ == '__main__':

@@ -57,6 +57,8 @@ class ButtonTexts(Enum):
     NEXT_YEAR = 'Следующий год'
     BACK_COLOR = 'Цвет фона'
     BUTTON_COLOR = 'Цвет кнопки'
+    MENU_BUTTON_COLOR = 'Цвет кнопки меню'
+    MENU_TEXT_COLOR = 'Цвет текста меню'
     FONT_COLOR = 'Цвет текста'
     PHOTO_COLOR = 'Цвет иконки фото'
     VIDEO_COLOR = 'Цвет иконки видео'

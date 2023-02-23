@@ -5,8 +5,8 @@ import sqlite3
 from configure import DB_NAME
 # from pyqtgraph.graphcsItems.GraphicsObject import GraphicsObject
 from PyQt5.QtCore import QRect
-from PyQt5.QtWidgets import (QComboBox, QMessageBox, QStackedWidget,
-                             QTableWidget, QTableWidgetItem)
+from PyQt5.QtWidgets import (QAbstractScrollArea, QComboBox, QMessageBox,
+                             QStackedWidget, QTableWidget, QTableWidgetItem)
 from pyqtgraph import BarGraphItem, GraphicsLayoutWidget, mkBrush, mkPen
 from src.global_enums.literals import InfoTexts, Titles
 from src.helper import (add_prev_next_buttons, add_year_buttons, clean_layout,
@@ -46,6 +46,7 @@ def stock_graph(layout, month, year):
 
 
 def single_chart(data, graph_widget, title, index):
+    ''' рисуется отдельный график и добавляется на общий стэк '''
     graph_page = GraphicsLayoutWidget()
     graph_page.setBackground('w')
     graph_1 = graph_page.addPlot(title=title)
@@ -72,6 +73,7 @@ def single_chart(data, graph_widget, title, index):
 
 
 def add_combo_box(graph_widget, names):
+    ''' для переключения слоев стэка графиков добавляется выпадающий список '''
     combo_box = QComboBox()
     for name in names:
         combo_box.addItem(name[0])
@@ -80,6 +82,7 @@ def add_combo_box(graph_widget, names):
 
 
 def create_graph(layout, sql_str, params, error_text):
+    ''' создается стэк графиков, список переключения, таблица с данными '''
     clean_layout(layout)
     layout.parentWidget().setGeometry(QRect(0, 0, 400, 600))
     try:
@@ -101,9 +104,12 @@ def create_graph(layout, sql_str, params, error_text):
         return
     graphics = (('photo', 1), ('video', 2), ('income', 3))
     data_table = QTableWidget(len(data), 3)
+    data_table.setSizeAdjustPolicy(
+        QAbstractScrollArea.AdjustToContents
+    )
     input_data_to_table(data_table, data, graphics)
     graph_widget = QStackedWidget()
-    data_table.setMaximumWidth(250)
+    data_table.resizeColumnsToContents()
     graph_widget.setMinimumWidth(200)
     for graphic in graphics:
         single_chart(data, graph_widget, *graphic)
@@ -113,6 +119,7 @@ def create_graph(layout, sql_str, params, error_text):
 
 
 def input_data_to_table(data_table, data, columns):
+    '''в таблицу слева от графика заносятся данные для точного представления'''
     headers = [column[0] for column in columns]
     data_table.setHorizontalHeaderLabels(headers)
     months = list(calendar.month_name)
