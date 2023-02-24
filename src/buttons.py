@@ -65,7 +65,7 @@ class IconButton(QPushButton):
         super().__init__(icon, '')
 
         self.setStyleSheet(
-            '''QPushButton {background-color: grey;
+            '''QPushButton {background-color: transparent;
                 color: black;
                 font: bold italic 10pt 'Comic Sans MS';
                 max-width: 30px ;

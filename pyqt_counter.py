@@ -1,24 +1,29 @@
 import logging
 import re
+import shutil
 import sqlite3
 import sys
+from pathlib import Path
 
-from PyQt5.QtCore import QRect, Qt
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QAction, QApplication, QColorDialog, QFormLayout,
-                             QHBoxLayout, QMainWindow, QMenuBar, QMessageBox,
-                             QVBoxLayout, QWidget, QFrame)
+from PyQt5.QtCore import QRect, QSize, Qt
+from PyQt5.QtGui import QBrush, QIcon, QImage, QPalette
+from PyQt5.QtWidgets import (QAction, QApplication, QColorDialog, QFileDialog,
+                             QFormLayout, QFrame, QHBoxLayout, QMainWindow,
+                             QMenuBar, QMessageBox, QVBoxLayout, QWidget)
 
 from configure import DB_NAME
 from pages import (add_income, add_loads, create_stock, graphic, month_stats,
                    total, year_stats)
+from src.buttons import IconButton, MenuButton
 from src.global_enums.literals import ButtonTexts, InfoTexts, Menus, Titles
-from src.helper import resource_path, start_sql, clean_frame
+from src.helper import clean_frame, resource_path, start_sql
 from src.stylesheets import COLOR_PATTERNS
-from src.buttons import MenuButton, IconButton
 
 
 class StockWindow(QMainWindow):
+    window_height = 600
+    window_width = 600
+
     def __init__(self):
         super().__init__()
 
@@ -37,7 +42,31 @@ class StockWindow(QMainWindow):
         self.main_layout.setStretch(1, 1)
         self.main_layout.addLayout(self.layout)
         self.main_layout.setStretch(2, 10)
-        self.setGeometry(QRect(0, 0, 500, 300))
+        self.setGeometry(
+            QRect(100, 100, self.window_height, self.window_width)
+        )
+        self.set_style()
+
+        self.create_menu()
+        self.create_left_menu()
+        self.create_center_buttons()
+
+        widget = QWidget()
+        widget.setLayout(self.main_layout)
+
+        self.setCentralWidget(widget)
+
+    def set_log_config(self):
+        # настройка логирования
+        logging.basicConfig(
+            level=logging.INFO,
+            filename=resource_path('main.log'),
+            filemode='w',
+            format=(''' %(asctime)s, %(levelname)s, %(name)s, %(message)s,
+                    %(funcName)s, %(lineno)d''')
+        )
+
+    def set_style(self):
         try:
             with sqlite3.connect(resource_path(DB_NAME)) as conn:
                 cursor = conn.cursor()
@@ -61,24 +90,11 @@ class StockWindow(QMainWindow):
             )
             return
 
-        self.create_menu()
-        self.create_left_menu()
-        self.create_center_buttons()
-
-        widget = QWidget()
-        widget.setLayout(self.main_layout)
-
-        self.setCentralWidget(widget)
-
-    def set_log_config(self):
-        # настройка логирования
-        logging.basicConfig(
-            level=logging.INFO,
-            filename=resource_path('main.log'),
-            filemode='w',
-            format=(''' %(asctime)s, %(levelname)s, %(name)s, %(message)s,
-                    %(funcName)s, %(lineno)d''')
-        )
+        oImage = QImage("src/images/fon.jpg")
+        sImage = oImage.scaled(QSize(self.window_height, self.window_width))
+        palette = QPalette()
+        palette.setBrush(QPalette.Window, QBrush(sImage))
+        self.setPalette(palette)
 
     def create_menu(self):
         ''' создание верхнего меню '''
@@ -110,7 +126,7 @@ class StockWindow(QMainWindow):
             (ButtonTexts.TOTAL.value, 'T',
              lambda: total.total(self.layout), self.sale_menu),
             (ButtonTexts.BACK_COLOR.value, 'B',
-             lambda: self.change_color(*COLOR_PATTERNS[0]), self.color_menu),
+             self.change_background, self.color_menu),
             (ButtonTexts.BUTTON_COLOR.value, 'P',
              lambda: self.change_color(*COLOR_PATTERNS[1]), self.color_menu),
             (ButtonTexts.FONT_COLOR.value, 'Ctrl+F',
@@ -143,7 +159,6 @@ class StockWindow(QMainWindow):
     def add_left_menu_item(self, name, shortcut, function, menu):
         '''  '''
         button = MenuButton(name)
-        button.setFlat(False)
         button.clicked.connect(function)
         self.left_layout.addWidget(button)
 
@@ -225,6 +240,18 @@ class StockWindow(QMainWindow):
         self.left_frame.show()
         right_button.hide()
         left_button.show()
+
+    def change_background(self):
+        filename, ok = QFileDialog.getOpenFileName(
+            self,
+            "Select a File",
+            "~",
+            "Images (*.png *.jpg)"
+        )
+        if filename:
+            path = Path(filename)
+            shutil.copyfile(path, 'src/images/fon.jpg')
+            self.set_style()
 
 
 if __name__ == '__main__':

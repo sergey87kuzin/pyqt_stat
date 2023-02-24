@@ -1,4 +1,9 @@
 StyleSheet = '''
+MainWindow {
+    background-image: url(fon.jpg);
+    background-repeat: no-repeat;
+    background-position: center;
+}
 QWidget {
     background-color: white;
     color: black;
