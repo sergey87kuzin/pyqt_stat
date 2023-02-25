@@ -1,46 +1,4 @@
-StyleSheet = '''
-MainWindow {
-    background-image: url(fon.jpg);
-    background-repeat: no-repeat;
-    background-position: center;
-}
-QWidget {
-    background-color: white;
-    color: black;
-}
-.QPushButton {background-color: grey;
-    font: bold italic 16pt 'Comic Sans MS';
-    width: 75px ;
-    height: 50px;
-    border: none;
-    text-align: center;
-    border-radius: 8px;
-}
-QDateEdit {
-    border: none;
-}
-.QPushButton {color: black;}
-# QPushButton:hover {background: #ff0000;}
-# QPushButton:pressed {background-color: blue;}
-QLabel {
-    padding-bottom: 0px;
-    padding-top: 0px;
-    marging-top: 0px;
-    marging-bottom: 0px;
-}
-'''
-
-COLOR_PATTERNS = ((r'background-color: [#0-9a-zA-F]+',
-                   'background-color: %s;'),
-                  (r'QPushButton {background-color: [#0-9a-zA-F]+',
-                   'QPushButton {background-color: %s'),
-                  (r'QPushButton {color: [#0-9a-zA-F]+',
-                   'QPushButton {color: %s'))
-
-button_text_color = ''
-button_color = ''
-
-STYLESHEET = f'''
+STYLESHEET = '''
 MainWindow {{
     background-image: url(fon.jpg);
     background-repeat: no-repeat;
@@ -59,12 +17,45 @@ MainWindow {{
 QDateEdit {{
     border: none;
 }}
-QPushButton:hover {{background: #ff0000;}}
 QPushButton:pressed {{background-color: {button_color};}}
 QLabel {{
     padding-bottom: 0px;
     padding-top: 0px;
-    marging-top: 0px;
-    marging-bottom: 0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
 }}
 '''
+
+MENUBUTTONSTYLE = '''QPushButton {{
+                background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 {background}, stop:0.5 white, stop:1 {background});
+                color: {color};
+                font: bold italic 10pt 'Comic Sans MS';
+                white-space: pre-wrap;
+                width: 75px ;
+                height: 50px;
+                border: none;
+                text-align: center;
+                border-radius: 8px;
+                }}
+                QPushButton:pressed {{
+                background-color: {background}
+                }}
+                QLabel {{
+                background-color: rgba(255, 255, 255, 10);
+                color: {color};
+                font: bold italic 10pt 'Comic Sans MS';
+                border: none;
+                white-space: pre-wrap;
+                text-align: center;
+                }}
+            '''
+
+ICONBUTTONSTYLE = '''QPushButton {background-color: transparent;
+                    color: black;
+                    font: bold italic 10pt 'Comic Sans MS';
+                    max-width: 30px ;
+                    height: 30px;
+                    border: none;
+                    text-align: center;
+                    border-radius: 5px;
+                }'''

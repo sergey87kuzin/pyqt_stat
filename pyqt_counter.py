@@ -16,6 +16,7 @@ from pages import (add_income, add_loads, create_stock, graphic, month_stats,
 from src.buttons import IconButton, MenuButton
 from src.global_enums.literals import ButtonTexts, InfoTexts, Menus, Titles
 from src.helper import clean_frame, resource_path, start_sql
+from src.stylesheets import STYLESHEET
 
 
 class StockWindow(QMainWindow):
@@ -24,7 +25,6 @@ class StockWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-
         self.set_log_config()
 
         self.setWindowTitle(Titles.ROOT_TITLE.value)
@@ -85,34 +85,10 @@ class StockWindow(QMainWindow):
                         button_text_color = line[1]
                     elif line[0] == 'button_color':
                         button_color = line[1]
-                    self.setStyleSheet(f'''
-                        MainWindow {{
-                            background-image: url(fon.jpg);
-                            background-repeat: no-repeat;
-                            background-position: center;
-                        }}
-                        .QPushButton {{
-                            background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 {button_color}, stop:0.5 white, stop:1 {button_color});
-                            color: {button_text_color};
-                            font: bold italic 16pt 'Comic Sans MS';
-                            width: 75px ;
-                            height: 50px;
-                            border: none;
-                            text-align: center;
-                            border-radius: 8px;
-                        }}
-                        QDateEdit {{
-                            border: none;
-                        }}
-                        QPushButton:hover {{background: #ff0000;}}
-                        QPushButton:pressed {{background-color: {button_color};}}
-                        QLabel {{
-                            padding-bottom: 0px;
-                            padding-top: 0px;
-                            marging-top: 0px;
-                            marging-bottom: 0px;
-                        }}
-                        ''')
+                    self.setStyleSheet(STYLESHEET.format(
+                        button_color=button_color,
+                        button_text_color=button_text_color
+                    ))
         except Exception as e:
             logging.warning(str(e))
             QMessageBox.warning(
