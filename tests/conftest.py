@@ -1,16 +1,29 @@
 import sqlite3
-import pytest
-
-# from PyQt5 import QtCore
-from configure import DB_NAME
-import pyqt_counter
 from datetime import datetime
-from src.helper import resource_path
-from src.helper import start_sql
+
+import pyqt_counter
+import pytest
+from configure import DB_NAME
+from src.helper import resource_path, start_sql
 
 
 @pytest.fixture
-def app(qtbot):
+def add_styles():
+    try:
+        with sqlite3.connect(resource_path(DB_NAME)) as conn:
+            cursor = conn.cursor()
+            values = [('menu', 'white'),
+                      ('text', 'black'),
+                      ('button_color', 'green'),
+                      ('button_text_color', 'blue')]
+            cursor.executemany('INSERT INTO stylesheets VALUES (?, ?)', values)
+            conn.commit()
+    except Exception as e:
+        print(str(e))
+
+
+@pytest.fixture
+def app(qtbot, add_styles):
     start_sql()
     counter = pyqt_counter.StockWindow()
     qtbot.addWidget(counter)
@@ -63,6 +76,7 @@ def clear_db():
             cursor.execute('DELETE FROM dates')
             cursor.execute('DELETE FROM loads')
             cursor.execute('DELETE FROM sales')
+            cursor.execute('DELETE FROM stylesheets')
             conn.commit()
     except Exception as e:
         print(str(e))

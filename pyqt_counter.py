@@ -22,6 +22,8 @@ from src.stylesheets import STYLESHEET
 class StockWindow(QMainWindow):
     window_height = 600
     window_width = 600
+    photo = 'red'
+    video = 'yellow'
 
     def __init__(self):
         super().__init__()
@@ -134,10 +136,6 @@ class StockWindow(QMainWindow):
              lambda: total.total(self.layout), self.sale_menu),
             (ButtonTexts.BACK_COLOR.value, 'B',
              self.change_background, self.color_menu),
-            # (ButtonTexts.BUTTON_COLOR.value, 'P',
-            #  lambda: self.change_color(*COLOR_PATTERNS[1]), self.color_menu),
-            # (ButtonTexts.FONT_COLOR.value, 'Ctrl+F',
-            #  lambda: self.change_color(*COLOR_PATTERNS[2]), self.color_menu),
             (ButtonTexts.BUTTON_COLOR.value, 'P',
              lambda: self.change_icon_color('button_color'), self.color_menu),
             (ButtonTexts.FONT_COLOR.value, 'Ctrl+F',

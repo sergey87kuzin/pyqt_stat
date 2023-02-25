@@ -23,7 +23,7 @@ class MenuButton(QPushButton):
             with sqlite3.connect(DB_NAME) as conn:
                 cursor = conn.cursor()
                 result = cursor.execute(
-                    ''' SELECT style FROM stylesheets WHERE widget IN
+                    ''' SELECT DISTINCT style FROM stylesheets WHERE widget IN
                      (?, ?)''', ['menu', 'text']
                 ).fetchall()
                 return [line[0] for line in result]

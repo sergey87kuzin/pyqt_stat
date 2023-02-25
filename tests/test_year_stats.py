@@ -10,7 +10,9 @@ from src.helper import resource_path
 
 def test_texts(app, clear_db, db_month_insert, insert_colors):
     year_stats.year_stats(app.layout, app.photo, app.video)
-    new_window = app.children()[2].children()[1]
+    with open('app.txt', 'w') as f:
+        f.write(str(app.children()[2].children()[4]))
+    new_window = app.children()[2].children()[4]
     layout = new_window.children()[0]
     button_layout = layout.itemAtPosition(6, 1).layout()
     next_but = button_layout.itemAtPosition(0, 1).widget()
@@ -28,7 +30,7 @@ def test_texts(app, clear_db, db_month_insert, insert_colors):
 def test_button(app, qtbot, clear_db, add_stock, db_month_insert):
     year = datetime.now().year
     year_stats.year_stats(app.layout, app.photo, app.video)
-    new_window = app.children()[2].children()[1]
+    new_window = app.children()[2].children()[4]
     layout = new_window.children()[0]
     button_layout = layout.itemAtPosition(6, 1).layout()
     next_but = button_layout.itemAtPosition(0, 1).widget()
