@@ -1,5 +1,4 @@
 import logging
-import re
 import shutil
 import sqlite3
 import sys
@@ -17,7 +16,6 @@ from pages import (add_income, add_loads, create_stock, graphic, month_stats,
 from src.buttons import IconButton, MenuButton
 from src.global_enums.literals import ButtonTexts, InfoTexts, Menus, Titles
 from src.helper import clean_frame, resource_path, start_sql
-from src.stylesheets import COLOR_PATTERNS
 
 
 class StockWindow(QMainWindow):
@@ -72,16 +70,49 @@ class StockWindow(QMainWindow):
                 cursor = conn.cursor()
                 init_style = cursor.execute(
                     '''SELECT widget, style FROM stylesheets WHERE
-                    widget IN (:main, :photo, :video)''',
-                    {'main': 'main', 'photo': 'photo', 'video': 'video'}
+                    widget IN (:button, :text, :photo, :video)''',
+                    {'button': 'button_color',
+                     'text': 'button_text_color',
+                     'photo': 'photo', 'video': 'video'}
                 ).fetchall()
+                button_color, button_text_color = '', ''
                 for line in init_style:
-                    if line[0] == 'main':
-                        self.setStyleSheet(line[1])
+                    if line[0] == 'video':
+                        self.video = line[1]
                     elif line[0] == 'photo':
                         self.photo = line[1]
-                    else:
-                        self.video = line[1]
+                    elif line[0] == 'button_text_color':
+                        button_text_color = line[1]
+                    elif line[0] == 'button_color':
+                        button_color = line[1]
+                    self.setStyleSheet(f'''
+                        MainWindow {{
+                            background-image: url(fon.jpg);
+                            background-repeat: no-repeat;
+                            background-position: center;
+                        }}
+                        .QPushButton {{
+                            background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 {button_color}, stop:0.5 white, stop:1 {button_color});
+                            color: {button_text_color};
+                            font: bold italic 16pt 'Comic Sans MS';
+                            width: 75px ;
+                            height: 50px;
+                            border: none;
+                            text-align: center;
+                            border-radius: 8px;
+                        }}
+                        QDateEdit {{
+                            border: none;
+                        }}
+                        QPushButton:hover {{background: #ff0000;}}
+                        QPushButton:pressed {{background-color: {button_color};}}
+                        QLabel {{
+                            padding-bottom: 0px;
+                            padding-top: 0px;
+                            marging-top: 0px;
+                            marging-bottom: 0px;
+                        }}
+                        ''')
         except Exception as e:
             logging.warning(str(e))
             QMessageBox.warning(
@@ -127,10 +158,15 @@ class StockWindow(QMainWindow):
              lambda: total.total(self.layout), self.sale_menu),
             (ButtonTexts.BACK_COLOR.value, 'B',
              self.change_background, self.color_menu),
+            # (ButtonTexts.BUTTON_COLOR.value, 'P',
+            #  lambda: self.change_color(*COLOR_PATTERNS[1]), self.color_menu),
+            # (ButtonTexts.FONT_COLOR.value, 'Ctrl+F',
+            #  lambda: self.change_color(*COLOR_PATTERNS[2]), self.color_menu),
             (ButtonTexts.BUTTON_COLOR.value, 'P',
-             lambda: self.change_color(*COLOR_PATTERNS[1]), self.color_menu),
+             lambda: self.change_icon_color('button_color'), self.color_menu),
             (ButtonTexts.FONT_COLOR.value, 'Ctrl+F',
-             lambda: self.change_color(*COLOR_PATTERNS[2]), self.color_menu),
+             lambda: self.change_icon_color('button_text_color'),
+             self.color_menu),
             (ButtonTexts.PHOTO_COLOR.value, 'F',
              lambda: self.change_icon_color('photo'), self.color_menu),
             (ButtonTexts.VIDEO_COLOR.value, 'V',
@@ -177,32 +213,6 @@ class StockWindow(QMainWindow):
         self.center_layout.addWidget(right_button)
         self.center_layout.addWidget(left_button)
 
-    def change_color(self, pattern, repl):
-        '''  '''
-        try:
-            with sqlite3.connect(resource_path(DB_NAME)) as conn:
-                cursor = conn.cursor()
-                init_style = cursor.execute(
-                    ''' SELECT style FROM stylesheets
-                    WHERE widget=:widget''', {'widget': 'main'}
-                ).fetchone()[0]
-                color = QColorDialog.getColor()
-                if not color.isValid():
-                    return
-                replace = repl % color.name()
-                style = re.sub(pattern, replace, init_style, 1)
-                self.setStyleSheet(style)
-                cursor.execute('''UPDATE stylesheets SET style=:style
-                               WHERE widget=:widget''',
-                               {'style': style, 'widget': 'main'})
-        except Exception as e:
-            logging.warning(str(e))
-            QMessageBox.warning(
-                self, Titles.WARN_TITLE.value,
-                InfoTexts.ERROR_TEXT.value
-            )
-            return
-
     def change_icon_color(self, indicator):
         '''  '''
         color = QColorDialog.getColor()
@@ -221,6 +231,8 @@ class StockWindow(QMainWindow):
             if indicator in ['text', 'menu']:
                 clean_frame(self.left_frame)
                 self.create_left_menu()
+            elif indicator in ['button_color', 'button_text_color']:
+                self.set_style()
         except Exception as e:
             logging.warning(str(e))
             QMessageBox.warning(
